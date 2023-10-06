@@ -1,0 +1,7 @@
+
+status - close
+survey - voting
+survey - voting summary
+survey - voting zhitel
+pdf -generating 
+    -upload
