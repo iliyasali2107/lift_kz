@@ -174,3 +174,9 @@ func (s SurveyrRepository) commitTransaction(tx pgx.Tx, ctx context.Context) err
 	return nil
 
 }
+
+func (s SurveyrRepository) CloseSurvey(ctx context.Context, survey_id int) error {
+	query := `UPDATE survey SET status = false WHERE id = $1`
+	_, err := s.db.Pool.Exec(ctx, query, survey_id)
+	return fmt.Errorf("couldn't close survey: %w", err)
+}

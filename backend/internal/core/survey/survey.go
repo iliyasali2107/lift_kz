@@ -13,6 +13,7 @@ type Repository interface {
 	// Create(*survey.SurveyRequirements) (*survey.SurveyRequirements, error)
 	Create(*SurveyRequirements, context.Context) (*SurveyRequirements, error)
 	GetSurviesByUserID(user_id int, ctx *gin.Context) (response []*SurveyResponse, err error)
+	CloseSurvey(ctx context.Context, survey_id int) error
 }
 
 // Service is a user service interface.
@@ -58,4 +59,8 @@ func (s Service) ValidateSurveyRequirements(requirements *SurveyRequirements) er
 	// Add more checks for other fields as needed
 
 	return nil
+}
+
+func (s Service) CloseSurvey(ctx context.Context, survey_id int) error {
+	return s.surveyRepository.CloseSurvey(ctx, survey_id)
 }

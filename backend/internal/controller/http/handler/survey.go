@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 type SurveyService interface {
 	Create(*survey.SurveyRequirements) (*survey.SurveyRequirements, error)
 	GetSurviesByUserID(user_id int, ctx *gin.Context) (response []*survey.SurveyResponse, err error)
+	CloseSurvey(ctx context.Context, survey_id int) error
 }
 type UserReq struct {
 	UserID int `json:"user_id"`
@@ -80,4 +82,31 @@ func (h surveyHandler) GetSurveis(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	c.JSON(http.StatusOK, respnose)
+}
+
+type CloseSurveyRequestBody struct {
+	SurveyId int `json:"survey_id"`
+}
+
+func (h surveyHandler) CloseSurvey(c *gin.Context) {
+	var request *CloseSurveyRequestBody
+	if err := c.BindJSON(&request); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	if request.SurveyId <= 0 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	surveyId := request.SurveyId
+
+	err := h.surveyService.CloseSurvey(c, surveyId)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
 }
