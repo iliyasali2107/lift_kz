@@ -1,7 +1,7 @@
 
 status - close    req : survey_id
 survey - voting   
-survey - voting summary
+survey - voting summary req : survey_id 
 survey - voting zhitel 
 pdf -generating 
     -upload
