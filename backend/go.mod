@@ -7,6 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.1
 	github.com/jackc/pgx/v5 v5.4.3
+	github.com/lib/pq v1.2.0
 	go.uber.org/zap v1.25.0
 )
 

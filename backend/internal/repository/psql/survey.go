@@ -2,20 +2,22 @@ package psql
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+
+	"mado/internal/core/survey"
+	"mado/models"
+	"mado/pkg/database/postgres"
+	"mado/pkg/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"go.uber.org/zap"
-
-	"mado/internal/core/survey"
-	"mado/pkg/database/postgres"
-	"mado/pkg/logger"
 )
 
 // Survey is a Survey repository.
@@ -178,5 +180,53 @@ func (s SurveyrRepository) commitTransaction(tx pgx.Tx, ctx context.Context) err
 func (s SurveyrRepository) CloseSurvey(ctx context.Context, survey_id int) error {
 	query := `UPDATE survey SET status = false WHERE id = $1`
 	_, err := s.db.Pool.Exec(ctx, query, survey_id)
-	return fmt.Errorf("couldn't close survey: %w", err)
+	if err != nil {
+		return fmt.Errorf("couldn't close survey: %w", err)
+	}
+
+	return nil
+}
+
+// TODO should think about "answers" column in "survey" table
+func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error) {
+	fmt.Println(surveyId)
+	query := `SELECT
+	s.id,
+	s.name AS survey_name,
+	s.status,
+	s.rka,
+	s.rc_name,
+	s.adress,
+	array_to_json(array_agg(q.description)) AS question_description,
+	s.created_at,
+	s.user_id
+FROM
+	survey s
+LEFT JOIN
+	question q ON q.id = ANY(s.question_id)
+WHERE s.id = $1
+GROUP BY
+	s.id, s.name, s.status, s.rka, s.rc_name, s.adress, s.created_at, s.user_id;`
+
+	var jsonArr string
+
+	var surv models.Survey
+
+	row := s.db.Pool.QueryRow(ctx, query, surveyId)
+
+	err := row.Scan(&surv.Id, &surv.Name, &surv.Status, &surv.Rka, &surv.RcName, &surv.Adress, &jsonArr, &surv.CreatedAt, &surv.UserId)
+	if err != nil {
+		return models.Survey{}, err
+	}
+
+	err = json.Unmarshal([]byte(jsonArr), &surv.Questions)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return models.Survey{}, survey.ErrNotFound
+		}
+		return models.Survey{}, err
+	}
+
+	return surv, nil
 }

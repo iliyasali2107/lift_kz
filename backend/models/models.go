@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"time"
 
 	"net/http"
 	"strconv"
@@ -20,7 +21,6 @@ type MetaData struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
-
 
 type DocumentFile struct {
 	Mime string `json:"mime"`
@@ -373,4 +373,17 @@ func (docRes DocumentHashesResponse) FixingDocumentHashes(id string, document []
 		}*/
 
 	return &response, nil
+}
+
+type Survey struct {
+	Id        int       `json:"id"`
+	Name      string    `json:"name"`
+	Status    bool      `json:"status"`
+	Rka       string    `json:"rka"`
+	RcName    string    `json:"rc_name"`
+	Adress    string    `json:"adress"`
+	Questions []string  `json:"questions"`
+	Answers   []string  `json:"answers"`
+	CreatedAt time.Time `json:"created_at"`
+	UserId    int       `json:"user_id"`
 }
