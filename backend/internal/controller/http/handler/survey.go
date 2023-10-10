@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,11 +11,15 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"mado/internal/core/survey"
+	"mado/models"
 )
 
 type SurveyService interface {
 	Create(*survey.SurveyRequirements) (*survey.SurveyRequirements, error)
 	GetSurviesByUserID(user_id int, ctx *gin.Context) (response []*survey.SurveyResponse, err error)
+	CloseSurvey(ctx context.Context, survey_id int) error
+	GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error)
+	GetSurveySummary(ctx context.Context, survey_id int) (models.Survey, error)
 }
 type UserReq struct {
 	UserID int `json:"user_id"`
@@ -39,8 +44,35 @@ func newSurveyHandler(deps surveyDeps) {
 	{
 		usersGroup.POST("/create", handler.CreateSurvey)
 		usersGroup.GET("/get/:id", handler.GetSurveis)
+		usersGroup.POST("/close", handler.CloseSurvey)
+		usersGroup.GET("/get", handler.GetSurvey)
+		usersGroup.GET("/summary", handler.GetSurveySummary)
 	}
 
+}
+
+type GetSurveySummaryRequest struct {
+	SurveyId int `json:"survey_id"`
+}
+
+func (h surveyHandler) GetSurveySummary(c *gin.Context) {
+	var req GetSurveySummaryRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	surveys, err := h.surveyService.GetSurveySummary(c, req.SurveyId)
+	if err != nil {
+		if err == survey.ErrNotFound {
+			c.AbortWithError(http.StatusNotFound, err)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, surveys)
 }
 
 func (h surveyHandler) CreateSurvey(c *gin.Context) {
@@ -80,4 +112,61 @@ func (h surveyHandler) GetSurveis(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 	c.JSON(http.StatusOK, respnose)
+}
+
+type CloseSurveyRequestBody struct {
+	SurveyId int `json:"survey_id"`
+}
+
+func (h surveyHandler) CloseSurvey(c *gin.Context) {
+	var request *CloseSurveyRequestBody
+	if err := c.BindJSON(&request); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	if request.SurveyId <= 0 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	surveyId := request.SurveyId
+
+	err := h.surveyService.CloseSurvey(c, surveyId)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
+type GetSurveyRequest struct {
+	SurveyId int `json:"survey_id"`
+}
+
+func (h surveyHandler) GetSurvey(c *gin.Context) {
+	var req GetSurveyRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	if req.SurveyId <= 0 {
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
+
+	res, err := h.surveyService.GetSurveyById(c, req.SurveyId)
+	if err != nil {
+		if err == survey.ErrNotFound {
+			c.AbortWithError(http.StatusNotFound, err)
+			return
+		}
+
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
