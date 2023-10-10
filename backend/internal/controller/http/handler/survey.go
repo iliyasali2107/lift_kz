@@ -19,6 +19,7 @@ type SurveyService interface {
 	GetSurviesByUserID(user_id int, ctx *gin.Context) (response []*survey.SurveyResponse, err error)
 	CloseSurvey(ctx context.Context, survey_id int) error
 	GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error)
+	GetSurveySummary(ctx context.Context, survey_id int) (models.Survey, error)
 }
 type UserReq struct {
 	UserID int `json:"user_id"`
@@ -45,8 +46,33 @@ func newSurveyHandler(deps surveyDeps) {
 		usersGroup.GET("/get/:id", handler.GetSurveis)
 		usersGroup.POST("/close", handler.CloseSurvey)
 		usersGroup.GET("/get", handler.GetSurvey)
+		usersGroup.GET("/summary", handler.GetSurveySummary)
 	}
 
+}
+
+type GetSurveySummaryRequest struct {
+	SurveyId int `json:"survey_id"`
+}
+
+func (h surveyHandler) GetSurveySummary(c *gin.Context) {
+	var req GetSurveySummaryRequest
+	if err := c.BindJSON(&req); err != nil {
+		c.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+
+	surveys, err := h.surveyService.GetSurveySummary(c, req.SurveyId)
+	if err != nil {
+		if err == survey.ErrNotFound {
+			c.AbortWithError(http.StatusNotFound, err)
+			return
+		}
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
+
+	c.JSON(http.StatusOK, surveys)
 }
 
 func (h surveyHandler) CreateSurvey(c *gin.Context) {

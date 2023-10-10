@@ -1,0 +1,19 @@
+{
+    "name": "name1",
+    "status": true,
+    "rka": "rka1",
+    "rc_name": "rc1",
+    "adress": "adress",
+    "questions": [
+        {
+        "descripton" : "desc1",
+        "answers": [
+            {
+            "name": "answer1"
+            }
+        ]
+        }
+    ],
+    "created_at": "21.07.2022",
+    "user_id": 1
+}

@@ -2,7 +2,6 @@ package psql
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -189,7 +188,89 @@ func (s SurveyrRepository) CloseSurvey(ctx context.Context, survey_id int) error
 
 // TODO should think about "answers" column in "survey" table
 func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error) {
-	fmt.Println(surveyId)
+	tx, err := s.startTransaction(ctx)
+	if err != nil {
+		return models.Survey{}, fmt.Errorf("couldn't start transaction")
+	}
+
+	defer s.rollbackIfError(tx, ctx, &err)
+
+	query := `SELECT
+				s.id,
+				s.name AS survey_name,
+				s.status,
+				s.rka,
+				s.rc_name,
+				s.adress,
+				array_to_json(array_agg(q.description)) AS question_description,
+				s.created_at,
+				s.user_id
+			FROM
+				survey s
+			LEFT JOIN
+				question q ON q.id = ANY(s.question_id)
+			WHERE s.id = $1
+			GROUP BY
+				s.id, s.name, s.status, s.rka, s.rc_name, s.adress, s.created_at, s.user_id;`
+
+	var questionsStr string
+	var surv models.Survey
+	row := tx.QueryRow(ctx, query, surveyId)
+	err = row.Scan(&surv.Id, &surv.Name, &surv.Status, &surv.Rka, &surv.RcName, &surv.Adress, &questionsStr, &surv.CreatedAt, &surv.UserId)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return models.Survey{}, survey.ErrNotFound
+		}
+		return models.Survey{}, err
+	}
+
+	err = json.Unmarshal([]byte(questionsStr), &surv.QuestionsStr)
+	if err != nil {
+		return models.Survey{}, err
+	}
+
+	answers, err := s.GetAllAnswers(ctx)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return models.Survey{}, survey.ErrNotFound
+		}
+		return models.Survey{}, err
+	}
+
+	surv.Answers = answers
+
+	err = s.commitTransaction(tx, ctx)
+	if err != nil {
+		return models.Survey{}, err
+	}
+
+	return surv, nil
+}
+
+func (s SurveyrRepository) GetAllAnswers(ctx context.Context) ([]models.Answer, error) {
+	query := `SELECT * FROM answer;`
+	rows, err := s.db.Pool.Query(ctx, query)
+	if err != nil {
+		return []models.Answer{}, err
+	}
+
+	answers := []models.Answer{}
+
+	for rows.Next() {
+		answer := models.Answer{}
+		if err := rows.Scan(&answer.Id, &answer.Name); err != nil {
+			return []models.Answer{}, err
+		}
+		answers = append(answers, answer)
+	}
+	return answers, nil
+}
+
+// gets summary of one survey (with answer count)
+func (s SurveyrRepository) GetSurveySummary(ctx context.Context, surveyId int) (models.Survey, error) {
+	tx, err := s.startTransaction(ctx)
+	defer s.rollbackIfError(tx, ctx, &err)
+
 	query := `SELECT
 	s.id,
 	s.name AS survey_name,
@@ -198,6 +279,7 @@ func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (mod
 	s.rc_name,
 	s.adress,
 	array_to_json(array_agg(q.description)) AS question_description,
+	s.question_id,
 	s.created_at,
 	s.user_id
 FROM
@@ -206,27 +288,64 @@ LEFT JOIN
 	question q ON q.id = ANY(s.question_id)
 WHERE s.id = $1
 GROUP BY
-	s.id, s.name, s.status, s.rka, s.rc_name, s.adress, s.created_at, s.user_id;`
+	s.id, s.name, s.status, s.rka, s.rc_name, s.adress, s.created_at, s.user_id, s.question_id;`
 
-	var jsonArr string
-
+	var questionsStr string
 	var surv models.Survey
-
-	row := s.db.Pool.QueryRow(ctx, query, surveyId)
-
-	err := row.Scan(&surv.Id, &surv.Name, &surv.Status, &surv.Rka, &surv.RcName, &surv.Adress, &jsonArr, &surv.CreatedAt, &surv.UserId)
+	ids := []int{}
+	row := tx.QueryRow(ctx, query, surveyId)
+	err = row.Scan(&surv.Id, &surv.Name, &surv.Status, &surv.Rka, &surv.RcName, &surv.Adress, &questionsStr, &ids, &surv.CreatedAt, &surv.UserId)
 	if err != nil {
-		return models.Survey{}, err
-	}
-
-	err = json.Unmarshal([]byte(jsonArr), &surv.Questions)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return models.Survey{}, survey.ErrNotFound
 		}
 		return models.Survey{}, err
 	}
 
+	err = json.Unmarshal([]byte(questionsStr), &surv.QuestionsStr)
+	if err != nil {
+		return models.Survey{}, err
+	}
+
+	for i, questionID := range ids {
+		query := `
+	        SELECT a.id, a.name, COUNT(uq.answer_id) AS count
+	        FROM answer a
+	        LEFT JOIN user_question uq ON a.id = uq.answer_id
+	        WHERE uq.question_id = $1
+	        GROUP BY a.name, a.id
+	    `
+		rows, err := tx.Query(ctx, query, questionID)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				return models.Survey{}, survey.ErrNotFound
+			}
+			return models.Survey{}, err
+		}
+		defer rows.Close()
+
+		question := models.Question{}
+		question.Id = questionID
+		question.Description = surv.QuestionsStr[i]
+
+		for rows.Next() {
+			var id int
+			var name string
+			var count int
+			if err := rows.Scan(&id, &name, &count); err != nil {
+				fmt.Println(err)
+				return models.Survey{}, err
+			}
+
+			answer := models.Answer{Id: id, Name: name, Count: count}
+			question.Answers = append(question.Answers, answer)
+		}
+
+		surv.Questions = append(surv.Questions, question)
+	}
+
+	err = s.commitTransaction(tx, ctx)
+
 	return surv, nil
+
 }

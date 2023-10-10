@@ -3,5 +3,12 @@ status - close    req : survey_id
 survey - voting   
 survey - voting summary req : survey_id 
 survey - voting zhitel 
-pdf -generating 
+pdf -generating
     -upload
+
+
+
+
+createSurveyRequest {
+    
+}

@@ -17,6 +17,7 @@ type Repository interface {
 	GetSurviesByUserID(user_id int, ctx *gin.Context) (response []*SurveyResponse, err error)
 	CloseSurvey(ctx context.Context, survey_id int) error
 	GetSurveyById(ctx context.Context, surveId int) (models.Survey, error)
+	GetSurveySummary(ctx context.Context, surveyId int) (models.Survey, error)
 }
 
 // Service is a user service interface.
@@ -75,4 +76,8 @@ func (s Service) GetSurveyById(ctx context.Context, surveyId int) (models.Survey
 	}
 
 	return survey, nil
+}
+
+func (s Service) GetSurveySummary(ctx context.Context, surveyId int) (models.Survey, error) {
+	return s.surveyRepository.GetSurveySummary(ctx, surveyId)
 }

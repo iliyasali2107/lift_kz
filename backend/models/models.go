@@ -376,14 +376,38 @@ func (docRes DocumentHashesResponse) FixingDocumentHashes(id string, document []
 }
 
 type Survey struct {
-	Id        int       `json:"id"`
-	Name      string    `json:"name"`
-	Status    bool      `json:"status"`
-	Rka       string    `json:"rka"`
-	RcName    string    `json:"rc_name"`
-	Adress    string    `json:"adress"`
-	Questions []string  `json:"questions"`
-	Answers   []string  `json:"answers"`
-	CreatedAt time.Time `json:"created_at"`
-	UserId    int       `json:"user_id"`
+	Id           int        `json:"id"`
+	Name         string     `json:"name"`
+	Status       bool       `json:"status"`
+	Rka          string     `json:"rka"`
+	RcName       string     `json:"rc_name"`
+	Adress       string     `json:"adress"`
+	Questions    []Question `json:"questions"`
+	QuestionsStr []string   `json:"questions_str"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UserId       int        `json:"user_id"`
+	// Ids          []int      `json:"ids,omitempty"`
+	Answers []Answer `json:"answers,omitempty"`
+}
+
+type UserSurvey struct {
+	Id        int        `json:"id"`
+	Name      string     `json:"name"`
+	Status    bool       `json:"status"`
+	Adress    string     `json:"adress"`
+	Questions []Question `json:"questions,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UserId    int        `json:"user_id"`
+}
+
+type Question struct {
+	Id          int      `json:"id"`
+	Description string   `json:"description"`
+	Answers     []Answer `json:"answers"`
+}
+
+type Answer struct {
+	Id    int    `json:"id"`
+	Name  string `json:"name"`
+	Count int    `json:"count,omitempty"`
 }
