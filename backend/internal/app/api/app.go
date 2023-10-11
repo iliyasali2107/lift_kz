@@ -46,6 +46,7 @@ func New(ctx context.Context, logger *zap.Logger) (App, error) {
 
 	repositories := psql.NewRepositories(postgresInstance, logger)
 	services := core.NewServices(repositories, logger)
+	
 
 	router := httphandler.NewRouter(httphandler.Deps{
 		Logger:   logger,
