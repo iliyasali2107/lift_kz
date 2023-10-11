@@ -53,13 +53,15 @@
             <p style="font-weight: bold">Survey: {{ selectedProduct.Name }}</p>
             <p style="font-weight: bold">Status: <Tag :value="getStatusLabel(selectedProduct.Status)" :severity="getSeverity(selectedProduct.Status)" /></p>
 
-            <div v-for="question in selectedProduct.Question_id">
+            <div v-for="question in selectedProduct.questions">
                 <p style="font-weight: 400">Вопрос: {{ question.description }}</p>
                 <div class="card flex justify-content-center">
                     <Chart type="pie" :data="chartData" :options="chartOptions" class="w-full md:w-30rem" />
                 </div>
             </div>
             <template #footer>
+                <Button label="Link" icon="pi pi-copy" @click="statisticDialog = false" style="margin-top: 10px" />
+                <Button label="Download votes" icon="pi pi-download" @click="statisticDialog = false" style="margin-top: 10px" />
                 <Button label="Cancel" icon="pi pi-times" text @click="statisticDialog = false" />
             </template>
         </Dialog>
@@ -198,7 +200,10 @@ const viewDetailt = async (data) => {
     selectedProduct.value = data;
     // console.log(data);
     const response = await nuxtApp.$liftservice().getSurveyByID(selectedProduct.value.id);
-    console.log('response:', response);
+    console.log('response:', response.data.value);
+    selectedProduct.value.questions = response.data.value.questions;
+    console.log('selectedProduct.value:', selectedProduct.value);
+
     statisticDialog.value = true;
 };
 </script>

@@ -14,6 +14,7 @@ require (
 require (
 	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 )
 
 require (
@@ -58,6 +59,7 @@ require (
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/lann/builder v0.0.0-20180802200727-47ae307949d0 // indirect
 	github.com/lann/ps v0.0.0-20150810152359-62de8c46ede0 // indirect
+	github.com/maypok86/conduit v0.0.0-20221031095055-d5dcd45408f9
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/multierr v1.10.0 // indirect
