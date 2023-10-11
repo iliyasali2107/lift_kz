@@ -409,5 +409,5 @@ type Question struct {
 type Answer struct {
 	Id    int    `json:"id"`
 	Name  string `json:"name"`
-	Count int    `json:"count,omitempty"`
+	Count int    `json:"count"`
 }
