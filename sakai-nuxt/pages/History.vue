@@ -4,14 +4,14 @@
         <Toolbar class="mb-4">
             <template #start>
                 <Button label="Добавить" icon="pi pi-plus" severity="success" class="mr-2" @click="openDialog" />
-                <Button label="Остановить" icon="pi pi-trash" severity="danger" @click="confirmDeleteSelected" :disabled="!selectedProducts || !selectedProducts.length" />
+                <Button label="Остановить" icon="pi pi-stop-circle" severity="danger" @click="confirmDeleteSelected" :disabled="isStopButtonDisabled()" />
             </template>
             <template #end>
                 <Button label="Export" icon="pi pi-upload" severity="help" @click="exportCSV($event)" />
             </template>
         </Toolbar>
-        <DataTable v-model:editingRows="editingRows" :value="products" v-model:selection="selectedProducts" editMode="row" dataKey="name" @row-edit-save="onRowEditSave" tableClass="editable-cells-table" tableStyle="min-width: 50rem">
-            <Column selectionMode="multiple" style="width: 5%" :exportable="false"></Column>
+        <DataTable v-model:editingRows="editingRows" :value="products" v-model:selection="selectedProducts" editMode="row" dataKey="id" @row-edit-save="onRowEditSave" tableClass="editable-cells-table" tableStyle="min-width: 50rem">
+            <Column selectionMode="single" style="width: 5%"></Column>
             <Column field="CreatedAt" header="Дата создания" style="width: 20%">
                 <template #body="{ data }">
                     {{ formatDate(data['CreatedAt']) }}
@@ -26,13 +26,6 @@
                 <template #body="{ data }">
                     <Tag :value="getStatusLabel(data.Status)" :severity="getSeverity(data.Status)" />
                 </template>
-                <!-- <template #filter="{ filterModel, filterCallback }">
-                    <Dropdown v-model="filterModel.value" @change="filterCallback()" :options="statuses" placeholder="Select One" class="p-column-filter" style="min-width: 12rem" :showClear="true">
-                        <template #option="slotProps">
-                            <Tag :value="slotProps.option" :severity="getSeverity(slotProps.option)" />
-                        </template>
-                    </Dropdown>
-                </template> -->
             </Column>
             <Column style="width: 10%; min-width: 8rem" bodyStyle="text-align:center">
                 <template #body="{ data, field }"> <Button icon="pi pi-eye" text rounded aria-label="Filter" @click="viewDetailt(data)" /></template
@@ -43,12 +36,10 @@
             <div class="field">
                 <label for="name">Имя</label>
                 <InputText id="name" v-model.trim="product.name" required="true" autofocus :class="{ 'p-invalid': submitted && !product.name }" />
-                <!-- <small class="p-error" v-if="submitted && !product.name">Name is required.</small> -->
             </div>
             <div v-for="question in questions">
                 <div class="field">
                     <InputText placeholder="Вопрос" id="question" v-model="question.description" />
-                    <!-- <small class="p-error" v-if="submitted && !product.name">Name is required.</small> -->
                 </div>
             </div>
             <Button label="Добавить вопрос" icon="pi pi-plus" @click="addQuestion" />
@@ -80,11 +71,13 @@ import { ref, onMounted } from 'vue';
 definePageMeta({
     layout: false
 });
-const confirmDeleteSelected = () => {
+const confirmDeleteSelected = async () => {
     console.log('selectedProduct:', selectedProducts.value);
-    for (var i = 0; i < selectedProducts.value.length; i++) {
-        products.value[products.value.findIndex((val) => val.name == selectedProducts.value[i].name)].inventoryStatus = 'НЕАКТИВНО';
-    }
+    await disableSurvey();
+    init();
+    // for (var i = 0; i < selectedProducts.value.length; i++) {
+    //     products.value[products.value.findIndex((val) => val.name == selectedProducts.value[i].name)].inventoryStatus = 'НЕАКТИВНО';
+    // }
 };
 const selectedProduct = ref();
 const statisticDialog = ref(false);
@@ -101,16 +94,11 @@ const product = {
 };
 
 const questions = ref([{ description: '' }]);
-const selectedProducts = ref();
+const selectedProducts = ref({});
 const productDialog = ref(false);
 const products = ref([]);
 const editingRows = ref([]);
 const nuxtApp = useNuxtApp();
-// const statuses = ref([
-//     { label: 'In Stock', value: 'АКТИВНО' },
-//     { label: 'Low Stock', value: 'НЕАКТИВНО' },
-//     { label: 'Out of Stock', value: 'OUTOFSTOCK' }
-// ]);
 const addQuestion = () => {
     questions.value.push({ description: '' });
 };
@@ -148,6 +136,9 @@ const saveProduct = async () => {
     await nuxtApp.$liftservice().post_survey({ questions: questions.value, name: product.name, user_id: 1 });
     await init();
     hideDialog();
+};
+const disableSurvey = async () => {
+    await nuxtApp.$liftservice().disableSurvey(selectedProducts.value.id);
 };
 const getSeverity = (status) => {
     if (status) {
@@ -199,10 +190,15 @@ const setChartData = () => {
         ]
     };
 };
-const viewDetailt = (data) => {
+const isStopButtonDisabled = () => {
+    return !selectedProducts.value.id;
+};
+const viewDetailt = async (data) => {
     console.log('data:', data);
     selectedProduct.value = data;
     // console.log(data);
+    const response = await nuxtApp.$liftservice().getSurveyByID(selectedProduct.value.id);
+    console.log('response:', response);
     statisticDialog.value = true;
 };
 </script>

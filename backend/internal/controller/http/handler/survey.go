@@ -43,10 +43,10 @@ func newSurveyHandler(deps surveyDeps) {
 	usersGroup := deps.router.Group("/survey")
 	{
 		usersGroup.POST("/create", handler.CreateSurvey)
-		usersGroup.GET("/get/:id", handler.GetSurveis)
+		usersGroup.GET("/get/surveys/:id", handler.GetSurveis)
 		usersGroup.POST("/close", handler.CloseSurvey)
-		usersGroup.GET("/get", handler.GetSurvey)
-		usersGroup.GET("/summary", handler.GetSurveySummary)
+		usersGroup.GET("/get/survey/:surveyId", handler.GetSurvey)
+		usersGroup.GET("/summary/:survey_id", handler.GetSurveySummary)
 	}
 
 }
@@ -56,13 +56,14 @@ type GetSurveySummaryRequest struct {
 }
 
 func (h surveyHandler) GetSurveySummary(c *gin.Context) {
-	var req GetSurveySummaryRequest
-	if err := c.BindJSON(&req); err != nil {
+	// var surveyId GetSurveySummaryRequest
+	survey_id, err := strconv.Atoi(c.Param("survey_id"))
+	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
-	surveys, err := h.surveyService.GetSurveySummary(c, req.SurveyId)
+	surveys, err := h.surveyService.GetSurveySummary(c, survey_id)
 	if err != nil {
 		if err == survey.ErrNotFound {
 			c.AbortWithError(http.StatusNotFound, err)
@@ -141,23 +142,17 @@ func (h surveyHandler) CloseSurvey(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
-type GetSurveyRequest struct {
-	SurveyId int `json:"survey_id"`
-}
-
 func (h surveyHandler) GetSurvey(c *gin.Context) {
-	var req GetSurveyRequest
-	if err := c.BindJSON(&req); err != nil {
+	surveyID, err := strconv.Atoi(c.Param("surveyId"))
+	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
-		return
 	}
-
-	if req.SurveyId <= 0 {
+	if surveyID <= 0 {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.surveyService.GetSurveyById(c, req.SurveyId)
+	res, err := h.surveyService.GetSurveyById(c, surveyID)
 	if err != nil {
 		if err == survey.ErrNotFound {
 			c.AbortWithError(http.StatusNotFound, err)
