@@ -229,7 +229,7 @@ func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (mod
 		return models.Survey{}, err
 	}
 
-	answers, err := s.GetAllAnswers(ctx)
+	answers, err := s.GetAllAnswers(ctx, tx)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return models.Survey{}, survey.ErrNotFound
@@ -247,9 +247,9 @@ func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (mod
 	return surv, nil
 }
 
-func (s SurveyrRepository) GetAllAnswers(ctx context.Context) ([]models.Answer, error) {
+func (s SurveyrRepository) GetAllAnswers(ctx context.Context, tx pgx.Tx) ([]models.Answer, error) {
 	query := `SELECT * FROM answer;`
-	rows, err := s.db.Pool.Query(ctx, query)
+	rows, err := tx.Query(ctx, query)
 	if err != nil {
 		return []models.Answer{}, err
 	}
@@ -336,16 +336,37 @@ GROUP BY
 				fmt.Println(err)
 				return models.Survey{}, err
 			}
-
+			fmt.Println("q: ", questionID, "a:", id, name, count)
 			answer := models.Answer{Id: id, Name: name, Count: count}
 			question.Answers = append(question.Answers, answer)
+		}
+
+		answersForCheck, err := s.GetAllAnswers(ctx, tx)
+		if err != nil {
+			return models.Survey{}, fmt.Errorf("couldn't get all answers")
+		}
+
+		for _, answer := range answersForCheck {
+			if !contains(answer, question.Answers) {
+				question.Answers = append(question.Answers, answer)
+			}
 		}
 
 		surv.Questions = append(surv.Questions, question)
 	}
 
 	err = s.commitTransaction(tx, ctx)
-
+	fmt.Println(surv)
 	return surv, nil
 
+}
+
+func contains(answerToCheck models.Answer, answers []models.Answer) bool {
+	for _, answer := range answers {
+		if answer.Id == answerToCheck.Id {
+			return true
+		}
+	}
+
+	return false
 }
