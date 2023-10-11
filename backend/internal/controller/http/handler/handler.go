@@ -29,6 +29,11 @@ func NewRouter(deps Deps) *gin.Engine {
 	api := router.Group("/api")
 	{
 
+		newPetitionHandler(petitionDeps{
+			router:          api,
+			petitionService: deps.Services.Petition,
+		})
+
 		newUserHandler(userDeps{
 			router: api,
 

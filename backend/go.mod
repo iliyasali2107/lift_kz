@@ -3,12 +3,17 @@ module mado
 go 1.20
 
 require (
+	github.com/PuerkitoBio/goquery v1.8.1
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/uuid v1.3.1
 	github.com/jackc/pgx/v5 v5.4.3
-	github.com/lib/pq v1.2.0
 	go.uber.org/zap v1.25.0
+)
+
+require (
+	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.1 // indirect
+	github.com/andybalholm/cascadia v1.3.1 // indirect
 )
 
 require (
