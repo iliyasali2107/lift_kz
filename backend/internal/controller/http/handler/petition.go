@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +15,7 @@ import (
 
 type PetitionService interface {
 	GetPetitionPdfByID(doc_id string) (response *petition.PetitionData, err error)
-	GeneratePetitionPDF(data *petition.PetitionData) (*petition.PetitionData, error)
+	GeneratePetitionPDF(data *petition.PetitionData) (*string, error)
 }
 
 type petitionDeps struct {
@@ -59,7 +60,7 @@ func (h petitionHandler) GetPetitionPDF(c *gin.Context) {
 }
 
 func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
-	
+
 	// Parse JSON request body into a PetitionData struct
 	var requestData petition.PetitionData
 	if err := c.BindJSON(&requestData); err != nil {
@@ -80,6 +81,9 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 
 	// Return the generated PDF data in the response
 	c.Header("Content-Type", "application/pdf")
-	c.Header("Content-Disposition", "attachment; filename="+generatedData.FileName)
-	c.Data(http.StatusOK, "application/pdf", generatedData.PdfData)
+	c.Header("Content-Disposition", "attachment; filename="+*generatedData)
+	// filePath := "internal/core/petition/outputs/" + *generatedData
+	os.Chdir("../../")
+	fmt.Println(os.Getwd())
+	c.File(*generatedData)
 }

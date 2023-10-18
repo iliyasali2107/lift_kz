@@ -12,8 +12,8 @@ require (
 )
 
 require (
-	github.com/SebastiaanKlippert/go-wkhtmltopdf v1.9.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
+	github.com/thecodingmachine/gotenberg-go-client/v7 v7.2.0 // indirect
 )
 
 require (
