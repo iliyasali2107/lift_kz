@@ -20,7 +20,9 @@ type SurveyService interface {
 	CloseSurvey(ctx context.Context, survey_id int) error
 	GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error)
 	GetSurveySummary(ctx context.Context, survey_id int) (models.Survey, error)
+	SaveSurvey(ctx context.Context, req interface{}) error
 }
+
 type UserReq struct {
 	UserID int `json:"user_id"`
 }
@@ -47,6 +49,7 @@ func newSurveyHandler(deps surveyDeps) {
 		usersGroup.POST("/close", handler.CloseSurvey)
 		usersGroup.GET("/get/survey/:surveyId", handler.GetSurvey)
 		usersGroup.GET("/summary/:survey_id", handler.GetSurveySummary)
+		usersGroup.POST("/survey/save", handler.SaveSurvey)
 	}
 
 }
@@ -164,4 +167,13 @@ func (h surveyHandler) GetSurvey(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+}
+
+
+
+type SaveSurveyRequest struct {
+
+}
+func (h surveyHandler) SaveSurvey(c *gin.Context) {
+
 }

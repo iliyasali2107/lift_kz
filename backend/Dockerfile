@@ -7,11 +7,13 @@ WORKDIR /app
 # Installing dependencies
 COPY go.mod go.sum ./
 RUN go mod download
-
-
+RUN apk update && apk add --no-cache chromium
 
 # Copying all the files
 COPY . .
+
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROME_PATH=/usr/lib/chromium/
 
 # Starting our application
 CMD ["sh", "-c", "cd cmd/api/ && go run main.go"]

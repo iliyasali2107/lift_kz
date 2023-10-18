@@ -81,3 +81,7 @@ func (s Service) GetSurveyById(ctx context.Context, surveyId int) (models.Survey
 func (s Service) GetSurveySummary(ctx context.Context, surveyId int) (models.Survey, error) {
 	return s.surveyRepository.GetSurveySummary(ctx, surveyId)
 }
+
+func (s Service) SaveSurvey(ctx context.Context, req interface{}) error {
+	return nil
+}

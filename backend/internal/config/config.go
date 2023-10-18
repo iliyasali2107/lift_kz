@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -104,29 +103,29 @@ func Get() *Config {
 		// Store the current working directory.
 		// This is important because we'll be changing the working directory temporarily to locate and load the .env file,
 		// and we want to ensure we can return to the original directory later.
-		originalDir, err := os.Getwd()
-		if err != nil {
+		// originalDir, err := os.Getwd()
+		// if err != nil {
 
-			log.Fatalf("Error getting current working directory: %v", err)
-		}
+		// 	log.Fatalf("Error getting current working directory: %v", err)
+		// }
 
 		// Change the working directory to where the .env file is located.
 		// Adjust the path as needed.
-		err = os.Chdir("../../")
-		if err != nil {
-			log.Fatalf("Error changing working directory: %v", err)
-		}
+		// err = os.Chdir("../../")
+		// if err != nil {
+		// 	log.Fatalf("Error changing working directory: %v", err)
+		// }
 
 		// Restore the original working directory when the test finishes.
-		defer func() {
-			err := os.Chdir(originalDir)
-			if err != nil {
-				log.Fatalf("Error restoring working directory: %v", err)
-			}
-		}()
+		// defer func() {
+		// 	err := os.Chdir(originalDir)
+		// 	if err != nil {
+		// 		log.Fatalf("Error restoring working directory: %v", err)
+		// 	}
+		// }()
 
 		// Load the .env file and read its contents.
-		err = godotenv.Load(".env")
+		err := godotenv.Load(".env")
 		if err != nil {
 			log.Fatalf("Error loading .env file: %v", err)
 		}

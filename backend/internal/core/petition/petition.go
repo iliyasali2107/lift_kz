@@ -4,15 +4,20 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"html/template"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
 
 	"mado/pkg/validator"
+
+	"github.com/chromedp/cdproto/page"
+	"github.com/chromedp/chromedp"
 )
 
 type Repository interface {
@@ -33,6 +38,92 @@ func NewService(petitionRepository Repository, logger *zap.Logger) Service {
 		petitionRepository: petitionRepository,
 		logger:             logger,
 	}
+}
+
+var transactionTemplatePath = "./assets/transaction/transaction.tmpl"
+
+func (s Service) GeneratePDF(ctx context.Context, t *template.Template, pageData interface{}, outFilePath string, templatePath string) error {
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	buf := &bytes.Buffer{}
+	err := t.Execute(buf, pageData)
+	if err != nil {
+		return fmt.Errorf("executing receipt template: %w", err)
+	}
+
+	html := buf.String()
+	// workingDir, err := os.Getwd()
+	// if err != nil {
+	// 	return fmt.Errorf("getting working directory: %w", err)
+	// }
+	htmlAssetsDir := "file://" + templatePath
+	fmt.Println(htmlAssetsDir)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	err = chromedp.Run(ctx,
+		chromedp.Navigate(htmlAssetsDir),
+
+		// Add EventLoadEventFired listener.
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			lctx, cancel := context.WithCancel(ctx)
+			chromedp.ListenTarget(lctx, func(ev interface{}) {
+				if _, ok := ev.(*page.EventLoadEventFired); ok {
+					// It's a good habit to remove the event
+					// listener if we don't need it anymore.
+					wg.Done()
+					cancel()
+				}
+			})
+			return nil
+		}),
+
+		// Set the page content.
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			frameTree, err := page.GetFrameTree().Do(ctx)
+			if err != nil {
+				fmt.Println(1)
+				return err
+			}
+
+			err = page.SetDocumentContent(frameTree.Frame.ID, html).Do(ctx)
+			if err != nil {
+				fmt.Println(2)
+				return err
+			}
+
+			return nil
+		}),
+
+		// Wait until the page is loaded (including its resources).
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			wg.Wait()
+			return nil
+		}),
+
+		// Print to PDF.
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			buf, _, err := page.PrintToPDF().WithPrintBackground(true).
+				WithPaperWidth(5.8).WithPaperHeight(8.3).Do(ctx)
+			if err != nil {
+				fmt.Println(3)
+				return err
+			}
+
+			err = os.WriteFile(outFilePath, buf, 0644)
+			if err != nil {
+				fmt.Println(4)
+				return err
+			}
+			return nil
+		}),
+	)
+	if err != nil {
+		return fmt.Errorf("chromedp: %w", err)
+	}
+
+	return nil
 }
 
 // Todo save to db ?
