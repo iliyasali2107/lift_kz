@@ -1,4 +1,5 @@
 <template>
+    <Toast></Toast>
     <div class="card p-fluid" style="height: 100vh">
         <p style="font-weight: bold; font-size: large">Добро пожаловать, Магжан Жумабаев</p>
         <Toolbar class="mb-4">
@@ -7,10 +8,11 @@
                 <Button label="Остановить" icon="pi pi-stop-circle" severity="danger" @click="confirmDeleteSelected" :disabled="isStopButtonDisabled()" />
             </template>
             <template #end>
-                <Button label="Export" icon="pi pi-upload" severity="help" @click="exportCSV($event)" />
+                <ConfirmPopup></ConfirmPopup>
+                <Button @click="confirmExist($event)" icon="pi pi-sign-out" label="Выход" outlined severity="danger"></Button>
             </template>
         </Toolbar>
-        <DataTable v-model:editingRows="editingRows" :value="products" v-model:selection="selectedProducts" editMode="row" dataKey="id" @row-edit-save="onRowEditSave" tableClass="editable-cells-table" tableStyle="min-width: 50rem">
+        <DataTable v-model:editingRows="editingRows" :value="products.valueOf()" v-model:selection="selectedProducts" editMode="row" dataKey="id" @row-edit-save="onRowEditSave" tableClass="editable-cells-table" tableStyle="min-width: 50rem">
             <Column selectionMode="single" style="width: 5%"></Column>
             <Column field="CreatedAt" header="Дата создания" style="width: 20%">
                 <template #body="{ data }">
@@ -53,13 +55,15 @@
             <p style="font-weight: bold">Survey: {{ selectedProduct.Name }}</p>
             <p style="font-weight: bold">Status: <Tag :value="getStatusLabel(selectedProduct.Status)" :severity="getSeverity(selectedProduct.Status)" /></p>
 
-            <div v-for="question in selectedProduct.Question_id">
+            <div v-for="question in selectedProduct.questions">
                 <p style="font-weight: 400">Вопрос: {{ question.description }}</p>
                 <div class="card flex justify-content-center">
-                    <Chart type="pie" :data="chartData" :options="chartOptions" class="w-full md:w-30rem" />
+                    <Chart type="pie" :data="setChartData(question)" :options="chartOptions" class="w-full md:w-30rem" />
                 </div>
             </div>
             <template #footer>
+                <Button label="Link" icon="pi pi-copy" @click="copyURL" style="margin-top: 10px" />
+                <Button label="Download votes" icon="pi pi-download" @click="statisticDialog = false" style="margin-top: 10px" />
                 <Button label="Cancel" icon="pi pi-times" text @click="statisticDialog = false" />
             </template>
         </Dialog>
@@ -68,13 +72,39 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
+import { useMainStore } from '../service/mainstore';
+import { useRouter } from 'vue-router';
+const confirm = useConfirm();
+const toast = useToast();
+const router = useRouter();
 definePageMeta({
     layout: false
 });
+const confirmExist = (event) => {
+    confirm.require({
+        target: event.currentTarget,
+        message: 'Уверены что хотите выйти из аккаунта?',
+        icon: 'pi pi-info-circle',
+        acceptClass: 'p-button-danger',
+        accept: () => {
+            // nuxtApp.$liftservice().clear_store();
+            useMainStore().clear_store();
+            router.push('/login/auth');
+            toast.add({ severity: 'info', summary: 'Confirmed', detail: 'Record deleted', life: 3000 });
+        },
+        reject: () => {
+            toast.add({ severity: 'error', summary: 'Rejected', detail: 'You have rejected', life: 3000 });
+        },
+        acceptLabel: 'Да',
+        rejectLabel: 'Нет'
+    });
+};
 const confirmDeleteSelected = async () => {
     console.log('selectedProduct:', selectedProducts.value);
     await disableSurvey();
-    init();
+    await init();
     // for (var i = 0; i < selectedProducts.value.length; i++) {
     //     products.value[products.value.findIndex((val) => val.name == selectedProducts.value[i].name)].inventoryStatus = 'НЕАКТИВНО';
     // }
@@ -103,11 +133,10 @@ const addQuestion = () => {
     questions.value.push({ description: '' });
 };
 onMounted(async () => {
-    chartData.value = setChartData();
+    // chartData.value = setChartData();
     // const store = useMainStore();
     // store.set_iin(localStorage.getItem('iin'));
     // console.log('HERE');
-
     await init();
     // ProductService.getProductsMini().then((data) => (products.value = data));
     // products.value = [{ code: '19-00', name: 'name', inventoryStatus: 'АКТИВНО', questions: [{ description: 'Idk' }] }];
@@ -121,7 +150,7 @@ const formatDate = (inputDate) => {
     return `${year}.${month}.${day}`;
 };
 const init = async () => {
-    var temp = await nuxtApp.$liftservice().get_survey();
+    var temp = await nuxtApp.$liftservice().get_surveys();
     // var temp = await get_survey();
     console.log('temp:', temp);
     products.value = temp;
@@ -176,19 +205,38 @@ const chartOptions = ref({
     }
 });
 
-const setChartData = () => {
+const setChartData = (question) => {
     const documentStyle = getComputedStyle(document.body);
 
     return {
         labels: ['Да', 'Нет', 'Воздержусь'],
         datasets: [
             {
-                data: [540, 325, 702],
+                // data: [540, 325, 702],
+                data: [question.answers[0], question.answers[1], question.answers[2]],
                 backgroundColor: [documentStyle.getPropertyValue('--blue-500'), documentStyle.getPropertyValue('--yellow-500'), documentStyle.getPropertyValue('--green-500')],
                 hoverBackgroundColor: [documentStyle.getPropertyValue('--blue-400'), documentStyle.getPropertyValue('--yellow-400'), documentStyle.getPropertyValue('--green-400')]
             }
         ]
     };
+};
+const copyURL = () => {
+    const baseUrl = window.location.origin; // Get the base URL without path or query
+
+    const input = document.createElement('input');
+    input.value = baseUrl + `/survey/${selectedProduct.value.id}`;
+    document.body.appendChild(input);
+    input.select();
+    document.execCommand('copy');
+    document.body.removeChild(input);
+
+    // Provide feedback to the user (optional)
+    toast.add({
+        severity: 'success',
+        summary: 'Базовый URL-адрес скопирован',
+        detail: 'Базовый URL-адрес скопирован в буфер обмена.',
+        life: 3000
+    });
 };
 const isStopButtonDisabled = () => {
     return !selectedProducts.value.id;
@@ -198,7 +246,10 @@ const viewDetailt = async (data) => {
     selectedProduct.value = data;
     // console.log(data);
     const response = await nuxtApp.$liftservice().getSurveyByID(selectedProduct.value.id);
-    console.log('response:', response);
+    console.log('response:', response.data.value);
+    selectedProduct.value.questions = response.data.value.questions;
+    console.log('selectedProduct.value:', selectedProduct.value);
+
     statisticDialog.value = true;
 };
 </script>

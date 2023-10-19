@@ -42,6 +42,16 @@ export const useMainStore = defineStore('main', {
         },
         set_user_id(new_user_id) {
             this.user_id = new_user_id;
+        },
+        clear_store() {
+            this.username = null;
+            this.email = null;
+            this.iin = null;
+            this.bin = null;
+            this.user_id = null;
+            this.is_manager = null;
+            this.istopbarvisible = null;
+            localStorage.clear();
         }
     }
 });
