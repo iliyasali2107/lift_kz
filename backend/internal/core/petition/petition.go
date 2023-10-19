@@ -40,8 +40,6 @@ func NewService(petitionRepository Repository, logger *zap.Logger) Service {
 	}
 }
 
-var transactionTemplatePath = "./assets/transaction/transaction.tmpl"
-
 func (s Service) GeneratePDF(ctx context.Context, t *template.Template, pageData interface{}, outFilePath string, templatePath string) error {
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
@@ -49,14 +47,11 @@ func (s Service) GeneratePDF(ctx context.Context, t *template.Template, pageData
 	buf := &bytes.Buffer{}
 	err := t.Execute(buf, pageData)
 	if err != nil {
-		return fmt.Errorf("executing receipt template: %w", err)
+		return fmt.Errorf("executing template: %w", err)
 	}
 
 	html := buf.String()
-	// workingDir, err := os.Getwd()
-	// if err != nil {
-	// 	return fmt.Errorf("getting working directory: %w", err)
-	// }
+
 	htmlAssetsDir := "file://" + templatePath
 	fmt.Println(htmlAssetsDir)
 

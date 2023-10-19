@@ -18,6 +18,7 @@ type Repository interface {
 	CloseSurvey(ctx context.Context, survey_id int) error
 	GetSurveyById(ctx context.Context, surveId int) (models.Survey, error)
 	GetSurveySummary(ctx context.Context, surveyId int) (models.Survey, error)
+	SaveSurvey(ctx context.Context, req models.SaveSurveyRequest) error
 }
 
 // Service is a user service interface.
@@ -82,6 +83,11 @@ func (s Service) GetSurveySummary(ctx context.Context, surveyId int) (models.Sur
 	return s.surveyRepository.GetSurveySummary(ctx, surveyId)
 }
 
-func (s Service) SaveSurvey(ctx context.Context, req interface{}) error {
+func (s Service) SaveSurvey(ctx context.Context, req models.SaveSurveyRequest) error {
+	err := s.surveyRepository.SaveSurvey(ctx, req)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

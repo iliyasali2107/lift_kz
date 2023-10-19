@@ -269,6 +269,9 @@ func (s SurveyrRepository) GetAllAnswers(ctx context.Context, tx pgx.Tx) ([]mode
 // gets summary of one survey (with answer count)
 func (s SurveyrRepository) GetSurveySummary(ctx context.Context, surveyId int) (models.Survey, error) {
 	tx, err := s.startTransaction(ctx)
+	if err != nil {
+		return models.Survey{}, err
+	}
 	defer s.rollbackIfError(tx, ctx, &err)
 
 	query := `SELECT
@@ -356,12 +359,37 @@ GROUP BY
 	}
 
 	err = s.commitTransaction(tx, ctx)
-	fmt.Println(surv)
+	if err != nil {
+		return models.Survey{}, err
+	}
 	return surv, nil
 
 }
 
-func contains(answerToCheck models.Answer, answers []models.Answer) bool {
+func (s SurveyrRepository) SaveSurvey(ctx context.Context, req models.SaveSurveyRequest) error {
+	tx, err := s.startTransaction(ctx)
+	if err != nil {
+		return err
+	}
+	s.rollbackIfError(tx, ctx, &err)
+
+	query := `INSERT INTO user_question(user_id, question_id, answer_id) VALUES($1, $2, $3);`
+	for _, question := range req.Questions {
+		_, err := tx.Exec(ctx, query, req.UserId, question.Id, question.Answer.Id)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = s.commitTransaction(tx, ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func contains(answerToCheck models.
+	Answer, answers []models.Answer) bool {
 	for _, answer := range answers {
 		if answer.Id == answerToCheck.Id {
 			return true
