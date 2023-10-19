@@ -1,12 +1,16 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"mado/internal/core/petition"
 	"mado/pkg/errs"
@@ -14,7 +18,8 @@ import (
 
 type PetitionService interface {
 	GetPetitionPdfByID(doc_id string) (response *petition.PetitionData, err error)
-	GeneratePetitionPDF(data *petition.PetitionData) (*petition.PetitionData, error)
+	GeneratePetitionPDF(data *petition.PetitionData) (*string, error)
+	GeneratePDF(ctx context.Context, t *template.Template, pageData interface{}, outFilePath string, templatePath string) error
 }
 
 type petitionDeps struct {
@@ -59,7 +64,7 @@ func (h petitionHandler) GetPetitionPDF(c *gin.Context) {
 }
 
 func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
-	
+
 	// Parse JSON request body into a PetitionData struct
 	var requestData petition.PetitionData
 	if err := c.BindJSON(&requestData); err != nil {
@@ -68,9 +73,22 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 		return
 	}
 
-	// Call the GeneratePetitionPDF function
-	generatedData, err := h.petitionService.GeneratePetitionPDF(&requestData)
+	// generatedData, err := h.petitionService.GeneratePetitionPDF(&requestData)
+
+	currentDir, _ := os.Getwd()
+
+	outFileName := uuid.New().String() + ".pdf"
+	htmlPath := currentDir + "/files/input_html/index.html"
+	outPath := currentDir + "/files/output_pdf/" + outFileName
+	temp, err := template.ParseFiles(htmlPath)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.petitionService.GeneratePDF(c, temp, requestData, outPath, htmlPath)
+	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -80,6 +98,7 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 
 	// Return the generated PDF data in the response
 	c.Header("Content-Type", "application/pdf")
-	c.Header("Content-Disposition", "attachment; filename="+generatedData.FileName)
-	c.Data(http.StatusOK, "application/pdf", generatedData.PdfData)
+	// c.Header("Content-Disposition", "attachment; filename="+*generatedData)
+	// filePath := "internal/core/petition/outputs/" + *generatedData
+	c.File(outPath)
 }

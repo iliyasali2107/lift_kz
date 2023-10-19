@@ -7,17 +7,19 @@ WORKDIR /app
 # Installing dependencies
 COPY go.mod go.sum ./
 RUN go mod download
-# RUN echo 'https://dl-cdn.alpinelinux.org/alpine/v3.14/community' >> /etc/apk/repositories
-# RUN echo 'https://dl-cdn.alpinelinux.org/alpine/v3.14/main' >> /etc/apk/repositories
-# RUN apk add --no-cache wkhtmltopdf
-# RUN apt-get update && \
-#     apt-get install -y xvfb wkhtmltopdf ghostscript
+RUN apk update && apk add --no-cache chromium
 
 # Copying all the files
 COPY . .
 
+ENV CHROME_BIN=/usr/bin/chromium-browser \
+    CHROME_PATH=/usr/lib/chromium/
+
 # Starting our application
 CMD ["sh", "-c", "cd cmd/api/ && go run main.go"]
 
+
 # Exposing server port
 EXPOSE 8080
+
+

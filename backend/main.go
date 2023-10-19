@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"mado/helpers"
 	"mado/internal"
@@ -10,17 +11,15 @@ import (
 
 const baseURL = "https://sigex.kz"
 
-
-
 // we did't need timeout because when 15min life time of QRCode is expired sigex will message to us
-func main() {
-}
+// func main() {
+// }
 
-func dinit() {
+func main() {
 	signatures, dataBytes, dataToSignBase64 := firstThreStep() //regist send data and get signatures
 
 	if len(signatures) > 0 {
-		// fmt.Println("Signature:", signatures[0])
+		fmt.Println("Signature:", signatures[0])
 		signature := signatures[0]
 		documentRegistrationRequest := models.NewDocumentRegistrationRequest(
 			"document title",
@@ -116,12 +115,17 @@ func dinit() {
 	}
 }
 
+const inputFilePDF = "4b533e62-a46c-4620-968e-b337b26d4a66.pdf"
+
 func firstThreStep() ([]string, []byte, string) {
+	currDir, _ := os.Getwd()
+	pdfFilesDir := currDir + "/files/output_pdf/"
+	filePath := pdfFilesDir + inputFilePDF
 	// Usage example:
 	qrSigner := internal.NewQRSigningClientCMS("Тестовое подписание", false, baseURL)
 	// Add data to sign (encoded in base64)
 	// dataToSignBase64 := "MTEK"
-	dataToSignBase64, dataBytes, err := helpers.ReadPdf("someFile.pdf")
+	dataToSignBase64, dataBytes, err := helpers.ReadPdf(filePath)
 	if err != nil {
 		fmt.Println("Could not read file: ", err)
 		return nil, nil, ""

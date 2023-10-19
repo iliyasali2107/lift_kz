@@ -1,16 +1,21 @@
 package petition
 
+import (
+	"io"
+)
+
 // Define a struct to hold the data
 type PetitionData struct {
-	FileName          string     `json:"file_name`
-	SheetNumber       *int       `json:"sheet_number,omitempty"`  //get it from potsgreSQL
-	CreationDate      string     `json:"creation_date,omitempty"` //getted from back
-	Location          string     `json:"location"`
-	ResponsiblePerson string     `json:"responsible_person"`
-	Questions         []Question `json:"questions"`
-	OwnerName         string     `json:"owner_name"`
-	OwnerAddress      string     `json:"owner_address"`
-	PdfData           []byte     `json:"pdf_data,omitempty"` //we did't get it from frontend we give it in backend
+	FileName          string        `json:"file_name"`
+	SheetNumber       *int          `json:"sheet_number,omitempty"`  //get it from potsgreSQL
+	CreationDate      string        `json:"creation_date,omitempty"` //getted from back
+	Location          string        `json:"location"`
+	ResponsiblePerson string        `json:"responsible_person"`
+	Questions         []Question    `json:"questions"`
+	OwnerName         string        `json:"owner_name"`
+	OwnerAddress      string        `json:"owner_address"`
+	PdfData           []byte        `json:"pdf_data,omitempty"` //we did't get it from frontend we give it in backend
+	File              io.ReadCloser `json:"file"`
 }
 
 // Define a struct to represent each question
