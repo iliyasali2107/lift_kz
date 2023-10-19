@@ -12,7 +12,7 @@
                 <Button @click="confirmExist($event)" icon="pi pi-sign-out" label="Выход" outlined severity="danger"></Button>
             </template>
         </Toolbar>
-        <DataTable v-model:editingRows="editingRows" :value="products" v-model:selection="selectedProducts" editMode="row" dataKey="id" @row-edit-save="onRowEditSave" tableClass="editable-cells-table" tableStyle="min-width: 50rem">
+        <DataTable v-model:editingRows="editingRows" :value="products.valueOf()" v-model:selection="selectedProducts" editMode="row" dataKey="id" @row-edit-save="onRowEditSave" tableClass="editable-cells-table" tableStyle="min-width: 50rem">
             <Column selectionMode="single" style="width: 5%"></Column>
             <Column field="CreatedAt" header="Дата создания" style="width: 20%">
                 <template #body="{ data }">
@@ -104,7 +104,7 @@ const confirmExist = (event) => {
 const confirmDeleteSelected = async () => {
     console.log('selectedProduct:', selectedProducts.value);
     await disableSurvey();
-    init();
+    await init();
     // for (var i = 0; i < selectedProducts.value.length; i++) {
     //     products.value[products.value.findIndex((val) => val.name == selectedProducts.value[i].name)].inventoryStatus = 'НЕАКТИВНО';
     // }
@@ -137,7 +137,6 @@ onMounted(async () => {
     // const store = useMainStore();
     // store.set_iin(localStorage.getItem('iin'));
     // console.log('HERE');
-
     await init();
     // ProductService.getProductsMini().then((data) => (products.value = data));
     // products.value = [{ code: '19-00', name: 'name', inventoryStatus: 'АКТИВНО', questions: [{ description: 'Idk' }] }];
@@ -151,7 +150,7 @@ const formatDate = (inputDate) => {
     return `${year}.${month}.${day}`;
 };
 const init = async () => {
-    var temp = await nuxtApp.$liftservice().get_survey();
+    var temp = await nuxtApp.$liftservice().get_surveys();
     // var temp = await get_survey();
     console.log('temp:', temp);
     products.value = temp;

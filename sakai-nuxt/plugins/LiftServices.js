@@ -25,7 +25,7 @@ const LiftService = {
         const response = await useAsyncData('confirm', async () => await $fetch(url, { method: 'POST', headers: getHeader(), body: requirements }));
         return response;
     },
-    async get_survey() {
+    async get_surveys() {
         const url = `${API_URL}/api/survey/get/surveys/1`;
         console.log('URL:', url);
         // const data = await useAsyncData('survey', async () => await $fetch(() => url, { method: 'GET', headers: getHeader() }));
@@ -37,6 +37,11 @@ const LiftService = {
     async post_survey(requirements) {
         const url = `${API_URL}/api/survey/create`;
         const response = await useAsyncData('createproduct', async () => await $fetch(url, { method: 'POST', headers: getHeader(), body: requirements }));
+        return response;
+    },
+    async get_survey(survey_id) {
+        const url = `${API_URL}/api/survey/get/survey/${survey_id}`;
+        const response = await $fetch(url, { headers: getHeader() });
         return response;
     }
 };
