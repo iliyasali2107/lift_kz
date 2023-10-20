@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -125,7 +126,8 @@ func Get() *Config {
 		// }()
 
 		// Load the .env file and read its contents.
-		err := godotenv.Load(".env")
+		currDir, _ := os.Getwd()
+		err := godotenv.Load(currDir + "/.env")
 		if err != nil {
 			log.Fatalf("Error loading .env file: %v", err)
 		}

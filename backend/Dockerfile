@@ -16,7 +16,7 @@ ENV CHROME_BIN=/usr/bin/chromium-browser \
     CHROME_PATH=/usr/lib/chromium/
 
 # Starting our application
-CMD ["sh", "-c", "cd cmd/api/ && go run main.go"]
+CMD ["sh", "-c", "go run cmd/api/main.go"]
 
 
 # Exposing server port
