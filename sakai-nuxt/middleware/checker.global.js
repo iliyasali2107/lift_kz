@@ -3,6 +3,11 @@ import { useMainStore } from '../service/mainstore';
 export default defineNuxtRouteMiddleware((to, from) => {
     setTimeout(() => {
         if (process.server) return;
+        // if(to.path != '/history' && to.path != '/')
+        console.log('To path:', to.path);
+        if (to.path.startsWith('/survey/')) {
+            return;
+        }
         if (!localStorage.getItem('iin')) {
             return navigateTo('/auth/login');
         }
