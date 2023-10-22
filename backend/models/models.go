@@ -411,14 +411,13 @@ type Answer struct {
 	Name  string `json:"name"`
 	Count int    `json:"count"`
 }
-type 	SaveSurveyRequest struct {
+type SaveSurveyRequest struct {
 	Id        int         `json:"id"`
 	Questions []Question2 `json:"questions,omitempty"`
 	UserId    int         `json:"user_id"`
 }
 
 type Question2 struct {
-	Id          int    `json:"id"`
-	Description string `json:"description"`
-	Answer      Answer `json:"answer"`
+	Id       int `json:"id"`
+	AnswerId int `json:"answer_id"`
 }

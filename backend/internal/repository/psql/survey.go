@@ -375,7 +375,7 @@ func (s SurveyrRepository) SaveSurvey(ctx context.Context, req models.SaveSurvey
 
 	query := `INSERT INTO user_question(user_id, question_id, answer_id) VALUES($1, $2, $3);`
 	for _, question := range req.Questions {
-		_, err := tx.Exec(ctx, query, req.UserId, question.Id, question.Answer.Id)
+		_, err := tx.Exec(ctx, query, req.UserId, question.Id, question.AnswerId)
 		if err != nil {
 			return err
 		}
