@@ -25,6 +25,8 @@ const LiftService = {
         const response = await useAsyncData('confirm', async () => await $fetch(url, { method: 'POST', headers: getHeader(), body: requirements }));
         return response;
     },
+
+    //TODO: the end of url must be dynamic
     async get_surveys() {
         const url = `${API_URL}/api/survey/get/surveys/1`;
         console.log('URL:', url);
@@ -43,6 +45,10 @@ const LiftService = {
         const url = `${API_URL}/api/survey/get/survey/${survey_id}`;
         const response = await $fetch(url, { headers: getHeader() });
         return response;
+    },
+    async post_answers(request) {
+        const url = `${API_URL}/api/survey/save`;
+        await useAsyncData('answer', async () => await $fetch(url, { method: 'POST', headers: getHeader(), body: request }));
     }
 };
 export default defineNuxtPlugin((nuxtApp) => {

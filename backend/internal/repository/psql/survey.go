@@ -196,22 +196,23 @@ func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (mod
 	defer s.rollbackIfError(tx, ctx, &err)
 
 	query := `SELECT
-				s.id,
-				s.name AS survey_name,
-				s.status,
-				s.rka,
-				s.rc_name,
-				s.adress,
-				array_to_json(array_agg(q.description)) AS question_description,
-				s.created_at,
-				s.user_id
-			FROM
-				survey s
-			LEFT JOIN
-				question q ON q.id = ANY(s.question_id)
-			WHERE s.id = $1
-			GROUP BY
-				s.id, s.name, s.status, s.rka, s.rc_name, s.adress, s.created_at, s.user_id;`
+    s.id,
+    s.name AS survey_name,
+    s.status,
+    s.rka,
+    s.rc_name,
+    s.adress,
+    array_to_json(array_agg(jsonb_build_object('id', q.id, 'description', q.description))) AS question_description,
+    s.created_at,
+    s.user_id
+FROM
+    survey s
+LEFT JOIN
+    question q ON q.id = ANY(s.question_id)
+WHERE s.id = $1
+GROUP BY
+    s.id, s.name, s.status, s.rka, s.rc_name, s.adress, s.created_at, s.user_id;
+`
 
 	var questionsStr string
 	var surv models.Survey
@@ -224,8 +225,13 @@ func (s SurveyrRepository) GetSurveyById(ctx context.Context, surveyId int) (mod
 		return models.Survey{}, err
 	}
 
-	err = json.Unmarshal([]byte(questionsStr), &surv.QuestionsStr)
+	// err = json.Unmarshal([]byte(questionsStr), &surv.QuestionsStr)
+	// if err != nil {
+	// 	return models.Survey{}, err
+	// }
+	err = json.Unmarshal([]byte(questionsStr), &surv.QuestionDescriptions)
 	if err != nil {
+		// Handle the error
 		return models.Survey{}, err
 	}
 

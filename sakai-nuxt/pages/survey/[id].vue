@@ -15,21 +15,26 @@
         <div class="card flex justify-content-center" style="padding-left: 0px; padding-right: 0px">
             <SelectButton v-model="value" :options="options" aria-labelledby="basic" />
         </div>
-        <Card v-if="survey" v-for="(question, key) in survey.questions_str" class="question_class">
+        <Card v-if="survey" v-for="(question, key) in survey.QuestionDescriptions" class="question_class">
             <template #title> Вопрос {{ key + 1 }} </template>
             <template #content>
-                <p>{{ question }} {{ question.includes('?') ? '' : '?' }}</p>
+                <p>{{ question.description }} {{ question.description.includes('?') ? '' : '?' }}</p>
                 <div class="flex align-items-center" style="margin-bottom: 2dvh">
-                    <Checkbox v-model="results[key]" inputId="ingredient1" name="value" value="Да" />
+                    <Checkbox v-model="results[key]" inputId="ingredient1" name="value" value="1" :disabled="results[key] && results[key] != `` && results[key] != `1`" />
                     <label for="ingredient1" class="ml-2"> Да </label>
                 </div>
                 <div class="flex align-items-center" style="margin-bottom: 2dvh">
-                    <Checkbox v-model="results[key]" inputId="ingredient2" name="value" value="Нет" />
+                    <Checkbox v-model="results[key]" inputId="ingredient2" name="value" value="2" :disabled="results[key] && results[key] != `` && results[key] != `2`" />
                     <label for="ingredient2" class="ml-2"> Нет </label>
                 </div>
-                <div class="flex align-items-center">
-                    <Checkbox v-model="results[key]" inputId="ingredient3" name="value" value="Воздержусь" />
+                <div class="flex align-items-center" style="margin-bottom: 2dvh">
+                    <Checkbox v-model="results[key]" inputId="ingredient3" name="value" value="3" :disabled="results[key] && results[key] != `` && results[key] != `3`" />
                     <label for="ingredient3" class="ml-2"> Воздержусь </label>
+                </div>
+                <div class="p-flex-grow-1"></div>
+                <!-- This div will push the button to the bottom -->
+                <div class="text-right">
+                    <Button label="Отменить голос" style="margin-bottom: 0; width: 15dvh; height: 5dvh; font-size: small" @click="results[key] = null" />
                 </div>
             </template>
         </Card>
@@ -66,12 +71,17 @@ export default {
             console.log('response:', this.survey);
         },
         sendResults() {
-            console.log('results:', this.results);
+            const questions = [];
+            for (var i = 0; i < this.results.length; i++) {
+                questions[i] = {
+                    id: this.survey.QuestionDescriptions[i].id,
+                    answer_id: parseInt(this.results[i][0])
+                };
+            }
+            const request = { id: parseInt(this.id), questions: questions, user_id: 6 };
+            console.log('results:', request);
+            this.nuxtApp.$liftservice().post_answers(request);
         }
-        // optionSelected(key, value) {
-        //     this.survey['answer'][key] = value;
-        //     console.log(this.survey);
-        // }
     }
 };
 </script>
