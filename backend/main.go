@@ -17,7 +17,7 @@ const baseURL = "https://sigex.kz"
 
 func main() {
 	signatures, dataBytes, dataToSignBase64 := firstThreStep() //regist send data and get signatures
-
+	fmt.Println("signatures", signatures)
 	if len(signatures) > 0 {
 		fmt.Println("Signature:", signatures[0])
 		signature := signatures[0]
@@ -70,7 +70,7 @@ func main() {
 		eGovMobileLaunchLink := qrSigner.GetEGovMobileLaunchLink()
 		// eGovBusinessLaunchLink := qrSigner.GetEGovBusinessLaunchLink()
 		fmt.Println("Second maneGov Mobile Launch Link2:", eGovMobileLaunchLink)
-
+		
 		newSignature, err := qrSigner.GetSignatures(nil)
 		if err != nil {
 			fmt.Println("GetSignatures Error:", err)

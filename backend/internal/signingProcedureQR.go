@@ -199,7 +199,6 @@ func (qc *QRSigningClientCMS) GetSignatures(dataSentCallback func()) ([]string, 
 		// fmt.Println("qc.DataURL: ", qc.DataURL)
 		// fmt.Println("signMethod: ", signMethod)
 		// fmt.Println("dataBytes: ", string(dataBytes))
-
 		response, err = http.Post(qc.DataURL, "application/json", bytes.NewReader(dataBytes))
 
 		if err == nil {

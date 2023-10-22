@@ -178,5 +178,7 @@ func (h surveyHandler) SaveSurvey(c *gin.Context) {
 	}
 
 	err = h.surveyService.SaveSurvey(c, req)
-
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	}
 }

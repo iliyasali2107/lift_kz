@@ -45,8 +45,9 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
+	// SIGNATUREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 	signature := auth.GetNonceSignature(requirements.QrSigner)
-
+	fmt.Println("SIGNATURE111: ", signature)
 	req := model.AuthRequest{
 		Nonce:     requirements.Nonce,
 		Signature: signature,
