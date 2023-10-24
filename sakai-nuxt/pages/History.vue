@@ -213,13 +213,14 @@ const setChartData = (question) => {
         datasets: [
             {
                 // data: [540, 325, 702],
-                data: [question.answers[0], question.answers[1], question.answers[2]],
+                data: [question.answers[0].count, question.answers[1].count, question.answers[2].count],
                 backgroundColor: [documentStyle.getPropertyValue('--blue-500'), documentStyle.getPropertyValue('--yellow-500'), documentStyle.getPropertyValue('--green-500')],
                 hoverBackgroundColor: [documentStyle.getPropertyValue('--blue-400'), documentStyle.getPropertyValue('--yellow-400'), documentStyle.getPropertyValue('--green-400')]
             }
         ]
     };
 };
+
 const copyURL = () => {
     const baseUrl = window.location.origin; // Get the base URL without path or query
 

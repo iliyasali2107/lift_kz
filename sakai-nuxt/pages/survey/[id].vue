@@ -1,4 +1,5 @@
 <template>
+    <Toast></Toast>
     <div>
         <Card style="margin-bottom: 0px" v-if="iin">
             <template #title> Добро пожаловать, {{ username }} </template>
@@ -31,6 +32,7 @@
                     <Checkbox v-model="results[key]" inputId="ingredient3" name="value" value="3" :disabled="results[key] && results[key] != `` && results[key] != `3`" />
                     <label for="ingredient3" class="ml-2"> Воздержусь </label>
                 </div>
+                <InlineMessage v-if="errorRow == key">обязательно надо ответить</InlineMessage>
                 <div class="p-flex-grow-1"></div>
                 <!-- This div will push the button to the bottom -->
                 <div class="text-right">
@@ -43,7 +45,7 @@
             <Skeleton class="question_class" height="20dvh" borderRadius="16px"></Skeleton>
             <Skeleton class="question_class" height="20dvh" borderRadius="16px"></Skeleton>
         </div>
-        <div class="center-button" style="margin-top: 5dvh"><Button label="Отправить" icon="pi pi-send" @click="sendResults" /></div>
+        <div class="center-button" style="margin-top: 5dvh"><Button label="Отправить" icon="pi pi-send" :loading="loading" @click="sendResults" /></div>
     </div>
 </template>
 <script>
@@ -59,7 +61,7 @@ export default {
         return { nuxtApp, id };
     },
     data() {
-        return { survey: null, amount_of_question: 0, results: [], iin: useMainStore().get_iin, username: useMainStore().get_username, value: 'Жилая помещения', options: ['Жилая помещения', 'Нежилая помещения'] };
+        return { loading: false, survey: null, errorRow: null, amount_of_question: 0, results: [], iin: useMainStore().get_iin, username: useMainStore().get_username, value: 'Жилая помещения', options: ['Жилая помещения', 'Нежилая помещения'] };
     },
 
     async mounted() {
@@ -70,17 +72,45 @@ export default {
             this.survey = await this.nuxtApp.$liftservice().get_survey(this.id);
             console.log('response:', this.survey);
         },
-        sendResults() {
+        async sendResults() {
+            this.loading = true;
             const questions = [];
-            for (var i = 0; i < this.results.length; i++) {
-                questions[i] = {
-                    id: this.survey.QuestionDescriptions[i].id,
-                    answer_id: parseInt(this.results[i][0])
-                };
+            for (var i = 0; i < this.survey.QuestionDescriptions.length; i++) {
+                try {
+                    questions[i] = {
+                        id: this.survey.QuestionDescriptions[i].id,
+                        answer_id: parseInt(this.results[i][0])
+                    };
+                } catch (e) {
+                    this.errorRow = i;
+                    this.loading = false;
+                    return;
+                }
             }
             const request = { id: parseInt(this.id), questions: questions, user_id: 6 };
             console.log('results:', request);
-            this.nuxtApp.$liftservice().post_answers(request);
+            try {
+                await this.nuxtApp.$liftservice().post_answers(request);
+                this.$toast.add({
+                    severity: 'success',
+                    summary: 'Успешно',
+                    detail: 'Ваш голос отправлен.',
+                    life: 3000
+                });
+            } catch (e) {
+                this.$toast.add({
+                    severity: 'error',
+                    summary: 'Error',
+                    detail: 'For unknown reason.',
+                    life: 3000
+                });
+            }
+            this.loading = false;
+            this.clearResult();
+        },
+        clearResult() {
+            this.results = [];
+            this.errorRow = null;
         }
     }
 };
