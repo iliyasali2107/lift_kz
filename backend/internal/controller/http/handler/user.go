@@ -65,7 +65,6 @@ func (h userHandler) getUser(c *gin.Context) {
 func (h userHandler) sendLink(c *gin.Context) {
 	egovMobileLink, qrSigner, nonce := auth.PreparationStep()
 	if egovMobileLink == nil || qrSigner == nil || nonce == nil {
-		fmt.Println("egovMobileLink: ", egovMobileLink)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": "egovMobileLink or qrSigner or nonce is nil"})
 		return
 	}

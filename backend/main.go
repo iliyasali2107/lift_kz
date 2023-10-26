@@ -11,6 +11,7 @@ import (
 
 const baseURL = "https://sigex.kz"
 
+
 // we did't need timeout because when 15min life time of QRCode is expired sigex will message to us
 // func main() {
 // }
@@ -27,15 +28,14 @@ func main() {
 			"cms",
 			signature,
 			[]string{"saitamenter@gmail.com"}, //nil,
-			models.DocumentSettings{
-				Private:                   false,
-				SignaturesLimit:           0,
-				SwitchToPrivateAfterLimit: false,
-				Unique:                    []string{"iin"},
-				StrictSignersRequirements: false,
-				// SignersRequirements:  ,
-
-			},
+			// models.DocumentSettings{
+			// 	Private:                   false,
+			// 	SignaturesLimit:           0,
+			// 	SwitchToPrivateAfterLimit: false,
+			// 	Unique:                    []string{"iin"},
+			// 	StrictSignersRequirements: false,
+			// 	// SignersRequirements:  ,
+			// },
 		)
 
 		documentRegistrationResponse, err := documentRegistrationRequest.RegisterDocument(baseURL)
@@ -70,7 +70,7 @@ func main() {
 		eGovMobileLaunchLink := qrSigner.GetEGovMobileLaunchLink()
 		// eGovBusinessLaunchLink := qrSigner.GetEGovBusinessLaunchLink()
 		fmt.Println("Second maneGov Mobile Launch Link2:", eGovMobileLaunchLink)
-		
+
 		newSignature, err := qrSigner.GetSignatures(nil)
 		if err != nil {
 			fmt.Println("GetSignatures Error:", err)

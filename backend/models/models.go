@@ -196,7 +196,7 @@ type DocumentRegistrationResponse struct {
 	RequestID int64  `json:"requestID,omitempty"`
 }
 
-func NewDocumentRegistrationRequest(title, description, signType, signature string, emailNotifications []string, settings DocumentSettings) DocumentRegistrationRequest {
+func NewDocumentRegistrationRequest(title, description, signType, signature string, emailNotifications []string /* settings DocumentSettings */) DocumentRegistrationRequest {
 	return DocumentRegistrationRequest{
 		Title:       title,       //* must have
 		Description: description, //* must have
@@ -205,7 +205,7 @@ func NewDocumentRegistrationRequest(title, description, signType, signature stri
 		EmailNotifications: EmailNotificationOptions{
 			To: emailNotifications,
 		},
-		Settings: settings,
+		// Settings: settings,
 	}
 }
 

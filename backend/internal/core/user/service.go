@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -42,8 +41,10 @@ func NewService(userRepository Repository, logger *zap.Logger) Service {
 }
 
 func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	// defer cancel()
+
+	ctx := context.Background()
 
 	// SIGNATUREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 	signature := auth.GetNonceSignature(requirements.QrSigner)
@@ -62,9 +63,14 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	iin := (response.UserID)[3:]
 	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager}
 	exist, err := s.userRepository.CheckIfUserExistsByIIN(ctx, *user.IIN)
+
+	// TODO: delete this row
+	err = nil
+
 	if err != nil {
 		return nil, err
 	}
+
 	if !exist {
 		s.userRepository.Create(ctx, user)
 	}
@@ -100,19 +106,19 @@ func getName(input string) *string {
 
 	// Define regular expressions to match CN and GIVENNAME values
 	cnRegex := regexp.MustCompile(`CN=([^,]+)`)
-	givenNameRegex := regexp.MustCompile(`GIVENNAME=([^,]+)`)
+	// givenNameRegex := regexp.MustCompile(`GIVENNAME=([^,]+)`)
 
 	// Find CN and GIVENNAME values using regular expressions
 	cnMatch := cnRegex.FindStringSubmatch(input)
-	givenNameMatch := givenNameRegex.FindStringSubmatch(input)
+	// givenNameMatch := givenNameRegex.FindStringSubmatch(input)
 
 	// Check if both CN and GIVENNAME values were found
-	if len(cnMatch) > 1 && len(givenNameMatch) > 1 {
+	if len(cnMatch) > 1 /* && len(givenNameMatch) > 1 */ {
 		cnValue := cnMatch[1]
-		givenNameValue := givenNameMatch[1]
+		// givenNameValue := givenNameMatch[1]
 
 		// Print the extracted values
-		result := fmt.Sprintf("%s %s", cnValue, givenNameValue)
+		result := cnValue
 		return &result
 	} else {
 		fmt.Println("CN and/or GIVENNAME not found in the input string.")

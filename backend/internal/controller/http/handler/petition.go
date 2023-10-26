@@ -20,6 +20,7 @@ type PetitionService interface {
 	GetPetitionPdfByID(doc_id string) (response *petition.PetitionData, err error)
 	GeneratePetitionPDF(data *petition.PetitionData) (*string, error)
 	GeneratePDF(ctx context.Context, t *template.Template, pageData interface{}, outFilePath string, templatePath string) error
+	GenerateFinalPdf(filePath string) (string, error)
 }
 
 type petitionDeps struct {
@@ -73,8 +74,6 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 		return
 	}
 
-	// generatedData, err := h.petitionService.GeneratePetitionPDF(&requestData)
-
 	currentDir, _ := os.Getwd()
 
 	outFileName := uuid.New().String() + ".pdf"
@@ -93,12 +92,14 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 		return
 	}
 
-	// Set the Content-Type header to specify UTF-8 encoding
-	c.Header("Content-Type", "application/json; charset=utf-8")
+	finalFilePath, err := h.petitionService.GenerateFinalPdf(outPath)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 
-	// Return the generated PDF data in the response
+	c.Header("Content-Type", "application/json; charset=utf-8")
 	c.Header("Content-Type", "application/pdf")
-	// c.Header("Content-Disposition", "attachment; filename="+*generatedData)
-	// filePath := "internal/core/petition/outputs/" + *generatedData
-	c.File(outPath)
+
+	c.File(finalFilePath)
 }
