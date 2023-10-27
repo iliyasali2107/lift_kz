@@ -19,6 +19,7 @@ import (
 type Repository interface {
 	Create(ctx context.Context, dto *User) (*User, error)
 	CheckIfUserExistsByIIN(ctx context.Context, iin string) (bool, error)
+	GetUsersSignature(ctx context.Context, userId int) (string, error)
 }
 
 // Service is a user service interface.
@@ -40,14 +41,18 @@ func NewService(userRepository Repository, logger *zap.Logger) Service {
 	}
 }
 
+func (s Service) GetUsersSignature(ctx context.Context, userId int) (string, error) {
+	return s.userRepository.GetUsersSignature(ctx, userId)
+}
+
 func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	// defer cancel()
 
 	ctx := context.Background()
 
-	// SIGNATUREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 	signature := auth.GetNonceSignature(requirements.QrSigner)
+	fmt.Println("LEN OF sign", len(*signature))
 	fmt.Println("SIGNATURE111: ", signature)
 	req := model.AuthRequest{
 		Nonce:     requirements.Nonce,
@@ -61,11 +66,8 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	}
 	fmt.Println(response)
 	iin := (response.UserID)[3:]
-	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager}
+	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager, Signature: signature}
 	exist, err := s.userRepository.CheckIfUserExistsByIIN(ctx, *user.IIN)
-
-	// TODO: delete this row
-	err = nil
 
 	if err != nil {
 		return nil, err

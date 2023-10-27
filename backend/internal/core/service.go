@@ -17,10 +17,10 @@ type Services struct {
 }
 
 // NewServices returns a new instance of Services.
-func NewServices(repositories psql.Repositories, logger *zap.Logger) Services {
+func NewServices(repositories psql.Repositories, userRepo psql.UserRepository, logger *zap.Logger) Services {
 	return Services{
 		User:     user.NewService(repositories.User, logger),
 		Survey:   survey.NewService(repositories.Survey, logger),
-		Petition: petition.NewService(repositories.Petition, logger),
+		Petition: petition.NewService(repositories.Petition, userRepo, logger),
 	}
 }

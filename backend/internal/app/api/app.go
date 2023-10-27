@@ -44,9 +44,11 @@ func New(ctx context.Context, logger *zap.Logger) (App, error) {
 		return App{}, fmt.Errorf("can not connect to postgres: %w", err)
 	}
 
+	// changed
+	userRepo := psql.NewUserRepository(postgresInstance, logger)
+
 	repositories := psql.NewRepositories(postgresInstance, logger)
-	services := core.NewServices(repositories, logger)
-	
+	services := core.NewServices(repositories, userRepo, logger)
 
 	router := httphandler.NewRouter(httphandler.Deps{
 		Logger:   logger,

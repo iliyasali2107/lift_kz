@@ -30,16 +30,22 @@ type Repository interface {
 	GetPetitionPdfByID(ctx context.Context, pdfID *int) (*PetitionData, error)
 }
 
+type UserRepository interface {
+	GetUsersSignature(ctx context.Context, userId int) (string, error)
+}
+
 // Service is a user service interface.
 type Service struct {
 	petitionRepository Repository
+	userRepository     UserRepository
 	logger             *zap.Logger
 }
 
 // NewService creates a new user service.
-func NewService(petitionRepository Repository, logger *zap.Logger) Service {
+func NewService(petitionRepository Repository, userRepo UserRepository, logger *zap.Logger) Service {
 	return Service{
 		petitionRepository: petitionRepository,
+		userRepository:     userRepo,
 		logger:             logger,
 	}
 }
@@ -57,7 +63,6 @@ func (s Service) GeneratePDF(ctx context.Context, t *template.Template, pageData
 	html := buf.String()
 
 	htmlAssetsDir := "file://" + templatePath
-	fmt.Println(htmlAssetsDir)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -291,10 +296,6 @@ func (s Service) GetPetitionPdfByID(id string) (*PetitionData, error) {
 
 func (s Service) GeneratePetitionPDF(data *PetitionData) (*string, error) {
 	os.Chdir("../../")
-	curr, _ := os.Getwd()
-	// /app
-	curr = curr + "/internal/core/petition"
-	fmt.Println(os.ReadDir(curr))
 	url := "http://localhost:3000/forms/chromium/convert/html"
 	filePath := "internal/core/petition/index.html"
 	outputPath := "internal/core/petition/my2.pdf"
@@ -366,15 +367,16 @@ func generateFinalFilePathandFileName(filePath string) (string, string) {
 
 	path := strings.Replace(filePath, "output_pdf", "final_pdf", 1)
 	arr := strings.Split(path, "/")
-	fmt.Println("filePATH", path)
 	return path, arr[len(arr)-1]
 }
 
+// const mockUserId = 6
+
 func (s Service) GenerateFinalPdf(filePath string) (string, error) {
 	finalFilePath, finalFileName := generateFinalFilePathandFileName(filePath)
-	signatures, dataBytes, dataToSignBase64 := firstThreStep(filePath)
+	signatures, dataBytes, _ := firstThreStep(filePath)
+
 	if len(signatures) > 0 {
-		fmt.Println("Signature:", signatures[0])
 		signature := signatures[0]
 		documentRegistrationRequest := models.NewDocumentRegistrationRequest(
 			"document title",
@@ -392,58 +394,59 @@ func (s Service) GenerateFinalPdf(filePath string) (string, error) {
 			// },
 		)
 
+		// var rrr models.DocumentRegistrationResponse
 		documentRegistrationResponse, err := documentRegistrationRequest.RegisterDocument(baseURL)
 		if err != nil {
 			fmt.Println("documentRegistrationRequest Error:", err)
 			return "", err
 		}
-		fmt.Println("Registered DocumentID: ", documentRegistrationResponse.DocumentID)
 
 		var docRes models.DocumentHashesResponse
 		docResponse, err := docRes.FixingDocumentHashes(documentRegistrationResponse.DocumentID, dataBytes, baseURL) //the reason why we did't use []byte(documentRegistrationResponse) because it will return doc if it was senden with inside signature
 		helpers.ErrorHandlingWithRerurn(err, "FixingDocumentHashes Error: ")
-		fmt.Println("FixingDocumentHashes DocumentID: ", docResponse.DocumentID)
-		fmt.Println("FixingDocumentHashes Digests: ", docResponse.Digests)
+		fmt.Println(docResponse)
 
+		// ! --------------------------------------------------------------------
 		///TODO automate this GETTING SECOND SIGNATURE
-		qrSigner := internal.NewQRSigningClientCMS("Тестовое подписание", false, baseURL)
+		// qrSigner := internal.NewQRSigningClientCMS("Тестовое подписание", false, baseURL)
 
-		err = qrSigner.AddDataToSign([]string{"Блок данных на подпись", "Блок данных на подпись", "Блок данных на подпись"}, dataToSignBase64, nil, true)
-		if err != nil {
-			fmt.Println("Could not read file: ", err)
-			return "", err
-		}
+		// err = qrSigner.AddDataToSign([]string{"Блок данных на подпись", "Блок данных на подпись", "Блок данных на подпись"}, dataToSignBase64, nil, true)
+		// if err != nil {
+		// 	fmt.Println("Could not read file: ", err)
+		// 	return "", err
+		// }
 
-		// Register QR signing
-		dateUrl, err := qrSigner.RegisterQRSinging()
-		if err != nil {
-			fmt.Println("RegisterQRSinging Error:", err)
-			return "", err
-		}
-		fmt.Println("Second man DateURL: ", dateUrl)
-		eGovMobileLaunchLink := qrSigner.GetEGovMobileLaunchLink()
-		// eGovBusinessLaunchLink := qrSigner.GetEGovBusinessLaunchLink()
-		fmt.Println("Second maneGov Mobile Launch Link2:", eGovMobileLaunchLink)
+		// // Register QR signing
+		// dateUrl, err := qrSigner.RegisterQRSinging()
+		// if err != nil {
+		// 	fmt.Println("RegisterQRSinging Error:", err)
+		// 	return "", err
+		// }
+		// fmt.Println("Second man DateURL: ", dateUrl)
+		// eGovMobileLaunchLink := qrSigner.GetEGovMobileLaunchLink()
+		// // eGovBusinessLaunchLink := qrSigner.GetEGovBusinessLaunchLink()
+		// fmt.Println("Second maneGov Mobile Launch Link2:", eGovMobileLaunchLink)
 
-		newSignature, err := qrSigner.GetSignatures(nil)
-		if err != nil {
-			fmt.Println("GetSignatures Error:", err)
-			return "", err
-		}
+		// newSignature, err := qrSigner.GetSignatures(nil)
+		// if err != nil {
+		// 	fmt.Println("GetSignatures Error:", err)
+		// 	return "", err
+		// }
 
-		fmt.Println("(len(newSignature: ", len(newSignature))
-		// documentRegistrationResponse.DocumentID
+		// fmt.Println("(len(newSignature: ", len(newSignature))
+		// // documentRegistrationResponse.DocumentID
 
-		fmt.Println("SECOND MAN docResponse.DocumentID: ", docResponse.DocumentID)
-		// fmt.Println("SECOND MAN docRes.DocumentID: ", docRes.DocumentID) // docRes had nothing
+		// fmt.Println("SECOND MAN docResponse.DocumentID: ", docResponse.DocumentID)
+		// // fmt.Println("SECOND MAN docRes.DocumentID: ", docRes.DocumentID) // docRes had nothing
 
-		addSignatureResponse, err := internal.AddSignatureToDocument(docResponse.DocumentID, newSignature[0], baseURL) //todo  docRes.DocumentID before was it
-		helpers.ErrorHandlingWithRerurn(err, "addSignatureResponse Error: ")
-		fmt.Println("Second man addSignatureResponse DocumentID:", addSignatureResponse.DocumentID)
-
+		// addSignatureResponse, err := internal.AddSignatureToDocument(docResponse.DocumentID, newSignature[0], baseURL) //todo  docRes.DocumentID before was it
+		// helpers.ErrorHandlingWithRerurn(err, "addSignatureResponse Error: ")
+		// fmt.Println("Second man addSignatureResponse DocumentID:", addSignatureResponse.DocumentID)
+		//! ----------------------------------------
+		// -------------------------------------------------------------------------
 		// docID: BqHfcYdPvidBIvl8 //addSignatureResponse.DocumentID, //TODO: CHECK
 		documentCard := internal.NewGenerateElectronicDocumentCardRequest(
-			addSignatureResponse.DocumentID,
+			docResponse.DocumentID,
 			finalFileName,
 			false,
 			false,
@@ -455,7 +458,6 @@ func (s Service) GenerateFinalPdf(filePath string) (string, error) {
 		//Document ID: PLViD43c6HgkbC1x
 		documentCardResponse, err := documentCard.GenerateElectronicDocumentCard(baseURL)
 		helpers.ErrorHandlingWithRerurn(err, "documentCardResponse Error: ")
-		fmt.Println("documentCardResponse:", documentCardResponse)
 
 		helpers.DecodeBase64ToPDF(documentCardResponse.DDC, finalFilePath)
 		if err != nil {
@@ -468,7 +470,7 @@ func (s Service) GenerateFinalPdf(filePath string) (string, error) {
 		fmt.Println("No signatures.")
 	}
 
-	return "", nil
+	return finalFilePath, nil
 }
 
 func firstThreStep(inputFilePDF string) ([]string, []byte, string) {
@@ -521,11 +523,13 @@ func firstThreStep(inputFilePDF string) ([]string, []byte, string) {
 
 	*/
 
+	// TODO :   changed
 	// Get signatures
 	signatures, err := qrSigner.GetSignatures(nil)
 	if err != nil {
 		fmt.Println("GetSignatures Error:", err)
 		return nil, nil, ""
 	}
+	// signatures := []string{"1", "2", "3"}
 	return signatures, dataBytes, dataToSignBase64
 }

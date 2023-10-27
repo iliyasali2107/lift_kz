@@ -18,6 +18,13 @@ type PetitionData struct {
 	File              io.ReadCloser `json:"file"`
 }
 
+type Date struct {
+    Day string
+    Month string
+    Year string
+    Time string
+}
+
 // Define a struct to represent each question
 type Question struct {
 	Number   int    `json:"number"`

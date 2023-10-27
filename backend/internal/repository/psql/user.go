@@ -62,13 +62,13 @@ func (ur UserRepository) Create(ctx context.Context, dto *user.User) (*user.User
 
 	// Prepare the SQL statement
 	sqlStatement := `
-		INSERT INTO users (iin, email, bin, name, is_manager) 
-		VALUES ($1, $2, $3, $4, $5);
+		INSERT INTO users (iin, email, bin, name, is_manager, signature) 
+		VALUES ($1, $2, $3, $4, $5, $6);
 		`
 	logger.FromContext(ctx).Debug("create user query", zap.String("sql", sqlStatement), zap.Any("args", dto))
 
 	// Execute the SQL statement
-	result, err := ur.db.Pool.Exec(ctx, sqlStatement, dto.IIN, dto.Email, dto.BIN, dto.Username, false)
+	result, err := ur.db.Pool.Exec(ctx, sqlStatement, dto.IIN, dto.Email, dto.BIN, dto.Username, false, dto.Signature)
 	if err != nil {
 		ur.logger.Error(errs.ErrInsertingUser.Error(), zap.Error(err))
 		return nil, fmt.Errorf("%w%w", errs.ErrInsertUser, err)
@@ -123,4 +123,16 @@ func (ur UserRepository) GetAllRows(ctx context.Context) ([]*user.User, error) {
 	}
 
 	return users, nil
+}
+
+func (ur UserRepository) GetUsersSignature(ctx context.Context, userId int) (string, error) {
+	query := `SELECT signature FROM users WHERE id = $1`
+	var signature string
+	err := ur.db.Pool.QueryRow(ctx, query, userId).Scan(&signature)
+	if err != nil {
+		return "", fmt.Errorf("failed to get signature")
+	}
+
+	return signature, nil
+
 }

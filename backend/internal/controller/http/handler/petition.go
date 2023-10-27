@@ -69,7 +69,6 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 	// Parse JSON request body into a PetitionData struct
 	var requestData petition.PetitionData
 	if err := c.BindJSON(&requestData); err != nil {
-		fmt.Println("HERE")
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -87,7 +86,6 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 
 	err = h.petitionService.GeneratePDF(c, temp, requestData, outPath, htmlPath)
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -100,6 +98,7 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 
 	c.Header("Content-Type", "application/json; charset=utf-8")
 	c.Header("Content-Type", "application/pdf")
-
+	fmt.Println("file path: ", finalFilePath)
 	c.File(finalFilePath)
+
 }

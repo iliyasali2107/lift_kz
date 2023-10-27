@@ -11,4 +11,5 @@ type User struct {
 	IIN        *string   `json:"iin"`
 	BIN        *string   `json:"bin"`
 	Is_manager *bool     `json:"is_manager"`
+	Signature  *string   `json:"signature"`
 }
