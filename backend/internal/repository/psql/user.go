@@ -27,11 +27,11 @@ func NewUserRepository(db *postgres.Postgres, logger *zap.Logger) UserRepository
 	}
 }
 
-func (ur UserRepository) CheckIfUserExistsByIIN(ctx context.Context, iin string) (bool, error) {
+func (ur UserRepository) CheckIfUserExistsByIIN(ctx context.Context, iin string) (int, bool, error) {
 	// Ensure you have a valid database connection
 	if ur.db == nil {
 		ur.logger.Error(errs.ErrDBConnectionIsNill.Error())
-		return false, errs.ErrDBConnectionIsNill
+		return 0, false, errs.ErrDBConnectionIsNill
 	}
 
 	// Prepare the SQL statement to count the number of users with the given iin
@@ -42,14 +42,24 @@ func (ur UserRepository) CheckIfUserExistsByIIN(ctx context.Context, iin string)
 	logger.FromContext(ctx).Debug("check user existence by iin query", zap.String("sql", sqlStatement), zap.String("iin", iin))
 
 	var count int
+	var id int
 	err := ur.db.Pool.QueryRow(ctx, sqlStatement, iin).Scan(&count)
 	if err != nil {
 		ur.logger.Error(errs.ErrGettingUsersCount.Error(), zap.Error(err))
-		return false, fmt.Errorf("%w", err)
+		return 0, false, fmt.Errorf("%w", err)
+	}
+
+	if count > 0 {
+		err := ur.db.Pool.QueryRow(ctx, `SELECT id FROM users WHERE iin = $1`, iin).Scan(id)
+		if err != nil {
+			return 0, false, err
+		}
+	} else {
+		id = 0
 	}
 
 	// If the count is greater than 0, it means a user with the given iin already exists
-	return count > 0, nil
+	return id, count > 0, nil
 }
 
 // TODO do it properly
@@ -64,27 +74,27 @@ func (ur UserRepository) Create(ctx context.Context, dto *user.User) (*user.User
 	// Prepare the SQL statement
 	sqlStatement := `
 		INSERT INTO users (iin, email, bin, name, is_manager, signature) 
-		VALUES ($1, $2, $3, $4, $5, $6);
+		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;
 		`
 	logger.FromContext(ctx).Debug("create user query", zap.String("sql", sqlStatement), zap.Any("args", dto))
-
+	var id int
 	// Execute the SQL statement
-	result, err := ur.db.Pool.Exec(ctx, sqlStatement, dto.IIN, dto.Email, dto.BIN, dto.Username, false, dto.Signature)
+	err := ur.db.Pool.QueryRow(ctx, sqlStatement, dto.IIN, dto.Email, dto.BIN, dto.Username, false, dto.Signature).Scan(&id)
 	if err != nil {
 		ur.logger.Error(errs.ErrInsertingUser.Error(), zap.Error(err))
 		return nil, fmt.Errorf("%w%w", errs.ErrInsertUser, err)
 	}
-
+	dto.ID = id
 	// Check the number of rows affected (usually for error checking)
-	rowsAffected := result.RowsAffected()
-	if rowsAffected != 1 {
-		ur.logger.Error(errs.ErrRowsAffected.Error())
-		return nil, fmt.Errorf("expected 1 row to be affected, but %d rows were affected", rowsAffected)
-	}
+	// rowsAffected := result.RowsAffected()
+	// if rowsAffected != 1 {
+	// 	ur.logger.Error(errs.ErrRowsAffected.Error())
+	// 	return nil, fmt.Errorf("expected 1 row to be affected, but %d rows were affected", rowsAffected)
+	// }
 
 	// Optionally, you can retrieve the newly inserted user if your database supports returning the inserted row.
 	// Otherwise, you may want to fetch the user by some unique identifier (e.g., ID) and return it here.
-
+	fmt.Println("repo dto: ", dto)
 	return dto, nil
 }
 
