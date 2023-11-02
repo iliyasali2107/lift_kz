@@ -112,6 +112,8 @@ const confirmDeleteSelected = async () => {
 const selectedProduct = ref();
 const statisticDialog = ref(false);
 const openDialog = () => {
+    const repo = nuxtApp.$liftservice().getRKATable({ parent_id: 106724, node_type: `ats-1` });
+    console.log('repo: ', repo);
     questions.value = [{ description: '' }];
     product['name'] = 'Имя опроса';
     productDialog.value = true;
@@ -154,6 +156,9 @@ const init = async () => {
     // var temp = await get_survey();
     console.log('temp:', temp);
     products.value = temp;
+    if (temp == null) {
+        products.value = [];
+    }
     console.log('products.value:', products.value);
 };
 const onRowEditSave = (event) => {
@@ -176,19 +181,6 @@ const getSeverity = (status) => {
     return 'warning';
 };
 const getStatusLabel = (status) => {
-    // switch (status) {
-    //     case 'АКТИВНО':
-    //         return 'success';
-
-    //     case 'НЕАКТИВНО':
-    //         return 'warning';
-
-    //     case 'OUTOFSTOCK':
-    //         return 'danger';
-
-    //     default:
-    //         return null;
-    // }
     if (status) {
         return 'АКТИВНО';
     }
