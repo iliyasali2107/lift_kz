@@ -75,7 +75,10 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	}
 
 	if !exist {
-		s.userRepository.Create(ctx, user)
+		user, err = s.userRepository.Create(ctx, user)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		user.ID = id
 	}
