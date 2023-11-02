@@ -87,6 +87,8 @@ func (h userHandler) confirmCredentials(c *gin.Context) {
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
+
+	fmt.Println(user)
 	c.JSON(http.StatusOK, gin.H{"user": user})
 
 }
