@@ -1,8 +1,8 @@
 <template>
     <Toast></Toast>
     <div>
-        <Card style="margin-bottom: 0px" v-if="iin">
-            <template #title> Добро пожаловать, {{ username }} </template>
+        <Card style="margin-bottom: 0px">
+            <template #title> Добро пожаловать</template>
             <template #content v-if="survey">
                 <div style="display: flex; flex-direction: row">
                     <div style="display: flex; flex-direction: column; margin-right: auto">
@@ -10,12 +10,14 @@
                         <span style="margin-top: 10px">Адресс: {{ survey.adress }}</span>
                     </div>
                     <Button label="История" icon="pi pi-history" />
+                    <Button label="Выйти" icon="pi pi-sign-out" severity="danger" style="margin-left: 10px" @click="exit" />
+                </div>
+                <!-- <hr /> -->
+                <div class="flex justify-content-center" style="padding-left: 0px; padding-right: 0px">
+                    <SelectButton v-model="value" :options="options" aria-labelledby="basic" />
                 </div>
             </template>
         </Card>
-        <div class="card flex justify-content-center" style="padding-left: 0px; padding-right: 0px">
-            <SelectButton v-model="value" :options="options" aria-labelledby="basic" />
-        </div>
         <Card v-if="survey" v-for="(question, key) in survey.QuestionDescriptions" class="question_class">
             <template #title> Вопрос {{ key + 1 }} </template>
             <template #content>
@@ -61,7 +63,18 @@ export default {
         return { nuxtApp, id };
     },
     data() {
-        return { loading: false, survey: null, errorRow: null, amount_of_question: 0, results: [], iin: useMainStore().get_iin, username: useMainStore().get_username, value: 'Жилая помещения', options: ['Жилая помещения', 'Нежилая помещения'] };
+        return {
+            loading: false,
+            survey: null,
+            errorRow: null,
+            amount_of_question: 0,
+            results: [],
+            iin: useMainStore().get_iin,
+            username: useMainStore().get_username,
+            value: 'Жилая помещения',
+            options: ['Жилая помещения', 'Нежилая помещения'],
+            user_id: useMainStore().get_user_id
+        };
     },
 
     async mounted() {
@@ -69,6 +82,9 @@ export default {
     },
     methods: {
         async init() {
+            if (!this.iin) this.iin = localStorage.getItem('iin');
+            if (!this.user_id) this.user_id = localStorage.getItem('user_id');
+            console.log('user_id:', this.user_id);
             this.survey = await this.nuxtApp.$liftservice().get_survey(this.id);
             console.log('response:', this.survey);
         },
@@ -77,6 +93,7 @@ export default {
             const questions = [];
             for (var i = 0; i < this.survey.QuestionDescriptions.length; i++) {
                 try {
+                    // console.log('QuestionDescriptions[i].description:', this.QuestionDescriptions[i].description);
                     questions[i] = {
                         id: this.survey.QuestionDescriptions[i].id,
                         answer_id: parseInt(this.results[i][0])
@@ -87,7 +104,7 @@ export default {
                     return;
                 }
             }
-            const request = { id: parseInt(this.id), questions: questions, user_id: 6 };
+            const request = { id: parseInt(this.id), questions: questions, user_id: this.user_id };
             console.log('results:', request);
             try {
                 await this.nuxtApp.$liftservice().post_answers(request);
@@ -111,6 +128,10 @@ export default {
         clearResult() {
             this.results = [];
             this.errorRow = null;
+        },
+        exit() {
+            useMainStore().clear_store();
+            this.$router.push('/login/auth');
         }
     }
 };

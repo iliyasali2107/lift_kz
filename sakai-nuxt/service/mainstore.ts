@@ -14,7 +14,9 @@ export const useMainStore = defineStore('main', {
     getters: {
         get_email: (state) => state.email,
         get_istopbarvisible: (state) => state.istopbarvisible,
-        get_iin: (state) => state.iin,
+        get_iin: (state) => {
+            return state.iin;
+        },
         get_bin: (state) => state.bin,
         get_username: (state) => state.username,
         get_is_manager: (state) => state.is_manager,

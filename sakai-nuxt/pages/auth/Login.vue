@@ -14,6 +14,7 @@ definePageMeta({
     layout: false
 });
 const router = useRouter();
+const user_id = ref(null);
 const is_manager = ref(false);
 const nuxtApp = useNuxtApp();
 const link = ref(null);
@@ -34,6 +35,9 @@ const login = async (ismanager) => {
 };
 onMounted(() => {
     iin.value = window.localStorage.getItem('iin');
+    user_id.value = window.localStorage.getItem('user_id');
+    console.log('user_id:', user_id);
+    console.log('iin:', iin);
     if (!iin.value) {
         iin.value = '';
     }
@@ -52,6 +56,7 @@ const confirm = async () => {
     id.value = user['id'];
     name.value = user['username'];
     window.localStorage.setItem('iin', user['iin']);
+    window.localStorage.setItem('user_id', user['id']);
     const store = useMainStore();
 
     store.set_email(user['email']);
