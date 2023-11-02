@@ -20,20 +20,24 @@ type PetitionService interface {
 	GetPetitionPdfByID(doc_id string) (response *petition.PetitionData, err error)
 	GeneratePetitionPDF(data *petition.PetitionData) (*string, error)
 	GeneratePDF(ctx context.Context, t *template.Template, pageData interface{}, outFilePath string, templatePath string) error
+	GenerateFinalPdf(filePath string) (string, error)
 }
 
 type petitionDeps struct {
 	router          *gin.RouterGroup
 	petitionService PetitionService
+	userService     UserService
 }
 
 type petitionHandler struct {
 	petitionService PetitionService
+	userService     UserService
 }
 
 func newPetitionHandler(deps petitionDeps) {
 	handler := petitionHandler{
 		petitionService: deps.petitionService,
+		userService:     deps.userService,
 	}
 
 	usersGroup := deps.router.Group("/petition")
@@ -63,17 +67,30 @@ func (h petitionHandler) GetPetitionPDF(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", response.PdfData)
 }
 
-func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
+type GenerateRequest struct {
+	UserId   int `json:"user_id"`
+	SurveyId int `josn:"survey_id"`
+}
 
+const location = "mock Location"
+
+func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
+	var req GenerateRequest
 	// Parse JSON request body into a PetitionData struct
 	var requestData petition.PetitionData
-	if err := c.BindJSON(&requestData); err != nil {
-		fmt.Println("HERE")
+	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// generatedData, err := h.petitionService.GeneratePetitionPDF(&requestData)
+	// user, err :=
+	_, err := h.userService.GetUser(c, req.UserId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	// survey, err := h.
 
 	currentDir, _ := os.Getwd()
 
@@ -88,17 +105,19 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 
 	err = h.petitionService.GeneratePDF(c, temp, requestData, outPath, htmlPath)
 	if err != nil {
-		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Set the Content-Type header to specify UTF-8 encoding
-	c.Header("Content-Type", "application/json; charset=utf-8")
+	finalFilePath, err := h.petitionService.GenerateFinalPdf(outPath)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
 
-	// Return the generated PDF data in the response
+	c.Header("Content-Type", "application/json; charset=utf-8")
 	c.Header("Content-Type", "application/pdf")
-	// c.Header("Content-Disposition", "attachment; filename="+*generatedData)
-	// filePath := "internal/core/petition/outputs/" + *generatedData
-	c.File(outPath)
+	fmt.Println("file path: ", finalFilePath)
+	c.File(finalFilePath)
+
 }

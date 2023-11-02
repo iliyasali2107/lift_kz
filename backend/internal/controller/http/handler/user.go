@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,6 +23,7 @@ type ECP struct {
 type UserService interface {
 	// Create(ctx context.Context, dto user.CreateDTO) (user.User, error)
 	Login(model.LoginRequirements) (*user.User, error)
+	GetUser(ctx context.Context, userId int) (user.User, error)
 	// GetAllRows()()
 }
 
@@ -65,14 +67,12 @@ func (h userHandler) getUser(c *gin.Context) {
 func (h userHandler) sendLink(c *gin.Context) {
 	egovMobileLink, qrSigner, nonce := auth.PreparationStep()
 	if egovMobileLink == nil || qrSigner == nil || nonce == nil {
-		fmt.Println("egovMobileLink: ", egovMobileLink)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": "egovMobileLink or qrSigner or nonce is nil"})
 		return
 	}
 	requirements := model.LoginRequirements{QrSigner: qrSigner, Nonce: nonce}
 	// go h.userService.Login(context.Background(), qrSigner, nonce)
 	c.JSON(http.StatusOK, gin.H{"link": egovMobileLink, "requirements": requirements})
-
 }
 
 func (h userHandler) confirmCredentials(c *gin.Context) {

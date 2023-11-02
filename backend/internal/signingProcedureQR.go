@@ -93,7 +93,7 @@ func (qc *QRSigningClientCMS) RegisterQRSinging() (string, error) {
 	}
 
 	if dataURL, ok := responseJSON["dataURL"].(string); ok {
-		qc.DataURL = dataURL
+		qc.DataURL = dataURL	
 	} else {
 		return "", fmt.Errorf("dataURL is not a valid string")
 	}

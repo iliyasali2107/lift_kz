@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -20,6 +19,8 @@ import (
 type Repository interface {
 	Create(ctx context.Context, dto *User) (*User, error)
 	CheckIfUserExistsByIIN(ctx context.Context, iin string) (bool, error)
+	GetUsersSignature(ctx context.Context, userId int) (string, error)
+	GetUser(ctx context.Context, userId int) (User, error)
 }
 
 // Service is a user service interface.
@@ -41,12 +42,18 @@ func NewService(userRepository Repository, logger *zap.Logger) Service {
 	}
 }
 
-func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
+func (s Service) GetUsersSignature(ctx context.Context, userId int) (string, error) {
+	return s.userRepository.GetUsersSignature(ctx, userId)
+}
 
-	// SIGNATUREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	// defer cancel()
+
+	ctx := context.Background()
+
 	signature := auth.GetNonceSignature(requirements.QrSigner)
+	fmt.Println("LEN OF sign", len(*signature))
 	fmt.Println("SIGNATURE111: ", signature)
 	req := model.AuthRequest{
 		Nonce:     requirements.Nonce,
@@ -60,11 +67,13 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	}
 	fmt.Println(response)
 	iin := (response.UserID)[3:]
-	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager}
+	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager, Signature: signature}
 	exist, err := s.userRepository.CheckIfUserExistsByIIN(ctx, *user.IIN)
+
 	if err != nil {
 		return nil, err
 	}
+
 	if !exist {
 		s.userRepository.Create(ctx, user)
 	}
@@ -100,22 +109,26 @@ func getName(input string) *string {
 
 	// Define regular expressions to match CN and GIVENNAME values
 	cnRegex := regexp.MustCompile(`CN=([^,]+)`)
-	givenNameRegex := regexp.MustCompile(`GIVENNAME=([^,]+)`)
+	// givenNameRegex := regexp.MustCompile(`GIVENNAME=([^,]+)`)
 
 	// Find CN and GIVENNAME values using regular expressions
 	cnMatch := cnRegex.FindStringSubmatch(input)
-	givenNameMatch := givenNameRegex.FindStringSubmatch(input)
+	// givenNameMatch := givenNameRegex.FindStringSubmatch(input)
 
 	// Check if both CN and GIVENNAME values were found
-	if len(cnMatch) > 1 && len(givenNameMatch) > 1 {
+	if len(cnMatch) > 1 /* && len(givenNameMatch) > 1 */ {
 		cnValue := cnMatch[1]
-		givenNameValue := givenNameMatch[1]
+		// givenNameValue := givenNameMatch[1]
 
 		// Print the extracted values
-		result := fmt.Sprintf("%s %s", cnValue, givenNameValue)
+		result := cnValue
 		return &result
 	} else {
 		fmt.Println("CN and/or GIVENNAME not found in the input string.")
 	}
 	return nil
+}
+
+func (s Service) GetUser(ctx context.Context, userId int) (User, error) {
+	return s.userRepository.GetUser(ctx, userId)
 }

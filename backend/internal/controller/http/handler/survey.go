@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -110,7 +109,7 @@ func (h surveyHandler) GetSurveis(c *gin.Context) {
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 	}
-	fmt.Println("userID:", userID)
+
 	respnose, err := h.surveyService.GetSurviesByUserID(userID, c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
