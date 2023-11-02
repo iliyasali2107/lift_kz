@@ -117,6 +117,7 @@ func (h surveyHandler) CreateSurvey(c *gin.Context) {
 
 }
 
+
 func (h surveyHandler) GetSurveis(c *gin.Context) {
 	userID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

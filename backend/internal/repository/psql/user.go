@@ -50,7 +50,7 @@ func (ur UserRepository) CheckIfUserExistsByIIN(ctx context.Context, iin string)
 	}
 
 	if count > 0 {
-		err := ur.db.Pool.QueryRow(ctx, `SELECT id FROM users WHERE iin = $1`, iin).Scan(id)
+		err := ur.db.Pool.QueryRow(ctx, `SELECT id FROM users WHERE iin = $1`, iin).Scan(&id)
 		if err != nil {
 			return 0, false, err
 		}

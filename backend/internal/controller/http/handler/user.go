@@ -85,10 +85,11 @@ func (h userHandler) confirmCredentials(c *gin.Context) {
 	// request.Context = &gin.Context{}
 	user, err := h.userService.Login(*request)
 	if err != nil {
+		fmt.Println(err)
 		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
-	fmt.Println(user)
 	c.JSON(http.StatusOK, gin.H{"user": user})
 
 }
