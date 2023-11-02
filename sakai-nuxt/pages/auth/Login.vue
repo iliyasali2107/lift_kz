@@ -58,7 +58,7 @@ const confirm = async () => {
     window.localStorage.setItem('iin', user['iin']);
     window.localStorage.setItem('user_id', user['id']);
     const store = useMainStore();
-
+    console.log("user['id']:", user['id']);
     store.set_email(user['email']);
     store.set_iin(user['iin']);
     store.set_bin(user['bin']);

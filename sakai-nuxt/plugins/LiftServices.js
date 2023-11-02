@@ -32,8 +32,8 @@ const LiftService = {
         return data;
     },
     //TODO: the end of url must be dynamic
-    async get_surveys() {
-        const url = `${API_URL}/api/survey/get/surveys/1`;
+    async get_surveys(id) {
+        const url = `${API_URL}/api/survey/get/surveys/${id}`;
         console.log('URL:', url);
         // const data = await useAsyncData('survey', async () => await $fetch(() => url, { method: 'GET', headers: getHeader() }));
         const data = await $fetch(url);

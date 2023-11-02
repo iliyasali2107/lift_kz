@@ -152,7 +152,8 @@ const formatDate = (inputDate) => {
     return `${year}.${month}.${day}`;
 };
 const init = async () => {
-    var temp = await nuxtApp.$liftservice().get_surveys();
+    var id = localStorage.getItem('user_id');
+    var temp = await nuxtApp.$liftservice().get_surveys(id);
     // var temp = await get_survey();
     console.log('temp:', temp);
     products.value = temp;
