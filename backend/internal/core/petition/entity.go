@@ -2,13 +2,14 @@ package petition
 
 import (
 	"io"
+	"mado/helpers"
 )
 
 // Define a struct to hold the data
 type PetitionData struct {
 	FileName          string        `json:"file_name"`
 	SheetNumber       *int          `json:"sheet_number,omitempty"`  //get it from potsgreSQL
-	CreationDate      string        `json:"creation_date,omitempty"` //getted from back
+	CreationDate      helpers.Date  `json:"creation_date,omitempty"` //getted from back
 	Location          string        `json:"location"`
 	ResponsiblePerson string        `json:"responsible_person"`
 	Questions         []Question    `json:"questions"`
@@ -19,10 +20,10 @@ type PetitionData struct {
 }
 
 type Date struct {
-    Day string
-    Month string
-    Year string
-    Time string
+	Day   string
+	Month string
+	Year  string
+	Time  string
 }
 
 // Define a struct to represent each question

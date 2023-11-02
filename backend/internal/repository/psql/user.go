@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 
 	"mado/internal/core/user"
+	"mado/models"
 	"mado/pkg/database/postgres"
 	"mado/pkg/errs"
 	"mado/pkg/logger"
@@ -136,12 +137,12 @@ func (ur UserRepository) GetUsersSignature(ctx context.Context, userId int) (str
 	return signature, nil
 }
 
-func (ur UserRepository) GetUser(ctx context.Context, userId int) (user.User, error) {
-	resUser := user.User{}
-	query := `SELECT * FROM users WHERE user_id = $1`
+func (ur UserRepository) GetUser(ctx context.Context, userId int) (models.User, error) {
+	resUser := models.User{}
+	query := `SELECT * FROM users WHERE id = $1`
 	row := ur.db.Pool.QueryRow(ctx, query, userId)
-	if err := row.Scan(&resUser.ID, &resUser.IIN, &resUser.Username); err != nil {
-		return user.User{}, nil
+	if err := row.Scan(&resUser.ID, &resUser.IIN, &resUser.Email, &resUser.BIN, &resUser.Is_manager, &resUser.Username); err != nil {
+		return models.User{}, err
 	}
 
 	return resUser, nil

@@ -32,6 +32,8 @@ func NewRouter(deps Deps) *gin.Engine {
 		newPetitionHandler(petitionDeps{
 			router:          api,
 			petitionService: deps.Services.Petition,
+			userService:     deps.Services.User,
+			surveyService:   deps.Services.Survey,
 		})
 
 		newUserHandler(userDeps{

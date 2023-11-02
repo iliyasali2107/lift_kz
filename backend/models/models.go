@@ -15,6 +15,16 @@ import (
 	// "mado/internal"
 )
 
+type User struct {
+	ID         int     `json:"id"`
+	Username   *string `json:"username"`
+	Email      *string `json:"email"`
+	IIN        *string `json:"iin"`
+	BIN        *string `json:"bin"`
+	Is_manager *bool   `json:"is_manager"`
+	Signature  *string `json:"signature"`
+}
+
 // //////////////////////////////
 type MetaData struct {
 	Name  string `json:"name"`
@@ -399,14 +409,26 @@ type Question struct {
 	Description string   `json:"description"`
 	Answers     []Answer `json:"answers"`
 }
-type UserSurvey struct {
-	Id        int        `json:"id"`
-	Name      string     `json:"name"`
-	Status    bool       `json:"status"`
-	Adress    string     `json:"adress"`
-	Questions []Question `json:"questions,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	UserId    int        `json:"user_id"`
+
+type GetUserSurvey struct {
+	Id        int         `json:"id"`
+	Name      string      `json:"name"`
+	Status    bool        `json:"status"`
+	Adress    string      `json:"adress"`
+	Questions []Question3 `json:"questions,omitempty"`
+	CreatedAt time.Time   `json:"created_at"`
+	UserId    int         `json:"user_id"`
+}
+
+type Question3 struct {
+	Id     int
+	Name   string
+	Answer Answer3
+}
+
+type Answer3 struct {
+	Id   int
+	Text string
 }
 
 type Answer struct {
@@ -421,6 +443,7 @@ type SaveSurveyRequest struct {
 }
 
 type Question2 struct {
-	Id       int `json:"id"`
-	AnswerId int `json:"answer_id"`
+	Id       int    `json:"id"`
+	AnswerId int    `json:"answer_id"`
+	Text     string `json:"text"`
 }

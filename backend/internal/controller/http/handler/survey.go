@@ -2,13 +2,19 @@ package handler
 
 import (
 	"context"
+	"fmt"
+	"html/template"
 	"net/http"
+	"os"
 	"strconv"
 
 	// "strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
+	"mado/helpers"
+	"mado/internal/core/petition"
 	"mado/internal/core/survey"
 	"mado/models"
 )
@@ -20,6 +26,7 @@ type SurveyService interface {
 	GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error)
 	GetSurveySummary(ctx context.Context, survey_id int) (models.Survey, error)
 	SaveSurvey(ctx context.Context, req models.SaveSurveyRequest) error
+	GetSurveyByUserIdAndSurveyId(ctx context.Context, surveyId, userId int) (models.Survey, error)
 }
 
 type UserReq struct {
@@ -29,16 +36,22 @@ type UserReq struct {
 type surveyDeps struct {
 	router *gin.RouterGroup
 
-	surveyService SurveyService
+	petitionService PetitionService
+	surveyService   SurveyService
+	userService     UserService
 }
 
 type surveyHandler struct {
-	surveyService SurveyService
+	surveyService   SurveyService
+	petitionService PetitionService
+	userService     UserService
 }
 
 func newSurveyHandler(deps surveyDeps) {
 	handler := surveyHandler{
-		surveyService: deps.surveyService,
+		surveyService:   deps.surveyService,
+		petitionService: deps.petitionService,
+		userService:     deps.userService,
 	}
 
 	usersGroup := deps.router.Group("/survey")
@@ -180,4 +193,64 @@ func (h surveyHandler) SaveSurvey(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 	}
+
+	user, err := h.userService.GetUser(c, req.UserId)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	currentDir, _ := os.Getwd()
+
+	outFileName := uuid.New().String() + ".pdf"
+	htmlPath := currentDir + "/files/input_html/index.html"
+	outPath := currentDir + "/files/output_pdf/" + outFileName
+	temp, err := template.ParseFiles(htmlPath)
+	if err != nil {
+		fmt.Println(3)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	pdfData := petition.PetitionData{}
+	pdfData.CreationDate = helpers.CurrentDateModel()
+	pdfData.Location = mockLocation
+	pdfData.ResponsiblePerson = ""
+	pdfData.OwnerName = *user.Username
+	pdfData.OwnerAddress = "mock owner adress"
+	pdfData.Questions = []petition.Question{}
+	for i, question := range req.Questions {
+		q := petition.Question{}
+		q.Number = i
+		q.Text = question.Text
+		if question.AnswerId == 1 {
+			q.Decision = "За"
+		} else if question.AnswerId == 2 {
+			q.Decision = "Против"
+		} else if question.AnswerId == 3 {
+			q.Decision = "Воздержусь"
+		}
+
+		pdfData.Questions = append(pdfData.Questions, q)
+	}
+
+	err = h.petitionService.GeneratePDF(c, temp, pdfData, outPath, htmlPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	finalFilePath, err := h.petitionService.GenerateFinalPdf(outPath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("Content-Type", "application/json; charset=utf-8")
+	c.Header("Content-Type", "application/pdf")
+	fmt.Println("file path: ", finalFilePath)
+	
+	c.File(finalFilePath)
+
 }
