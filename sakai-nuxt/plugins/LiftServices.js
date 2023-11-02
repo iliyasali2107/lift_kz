@@ -25,7 +25,12 @@ const LiftService = {
         const response = await useAsyncData('confirm', async () => await $fetch(url, { method: 'POST', headers: getHeader(), body: requirements }));
         return response;
     },
-
+    async getRKATable(requirements) {
+        const url = `https://findhow.org/2446-adresnyiy-registr-rk-kod-rka-kadastrovyiy-nomer.html`;
+        // const data = await $fetch(url);
+        const data = await useAsyncData('getRKATable', async () => await $fetch(url, { method: 'POST', headers: getHeader(), body: requirements }));
+        return data;
+    },
     //TODO: the end of url must be dynamic
     async get_surveys() {
         const url = `${API_URL}/api/survey/get/surveys/1`;
