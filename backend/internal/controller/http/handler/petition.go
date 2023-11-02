@@ -26,15 +26,18 @@ type PetitionService interface {
 type petitionDeps struct {
 	router          *gin.RouterGroup
 	petitionService PetitionService
+	userService     UserService
 }
 
 type petitionHandler struct {
 	petitionService PetitionService
+	userService     UserService
 }
 
 func newPetitionHandler(deps petitionDeps) {
 	handler := petitionHandler{
 		petitionService: deps.petitionService,
+		userService:     deps.userService,
 	}
 
 	usersGroup := deps.router.Group("/petition")
@@ -64,14 +67,30 @@ func (h petitionHandler) GetPetitionPDF(c *gin.Context) {
 	c.Data(http.StatusOK, "application/pdf", response.PdfData)
 }
 
-func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
+type GenerateRequest struct {
+	UserId   int `json:"user_id"`
+	SurveyId int `josn:"survey_id"`
+}
 
+const location = "mock Location"
+
+func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
+	var req GenerateRequest
 	// Parse JSON request body into a PetitionData struct
 	var requestData petition.PetitionData
-	if err := c.BindJSON(&requestData); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+
+	// user, err :=
+	_, err := h.userService.GetUser(c, req.UserId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	// survey, err := h.
 
 	currentDir, _ := os.Getwd()
 

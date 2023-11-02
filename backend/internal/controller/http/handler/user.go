@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -22,6 +23,7 @@ type ECP struct {
 type UserService interface {
 	// Create(ctx context.Context, dto user.CreateDTO) (user.User, error)
 	Login(model.LoginRequirements) (*user.User, error)
+	GetUser(ctx context.Context, userId int) (user.User, error)
 	// GetAllRows()()
 }
 

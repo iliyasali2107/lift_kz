@@ -134,5 +134,15 @@ func (ur UserRepository) GetUsersSignature(ctx context.Context, userId int) (str
 	}
 
 	return signature, nil
+}
 
+func (ur UserRepository) GetUser(ctx context.Context, userId int) (user.User, error) {
+	resUser := user.User{}
+	query := `SELECT * FROM users WHERE user_id = $1`
+	row := ur.db.Pool.QueryRow(ctx, query, userId)
+	if err := row.Scan(&resUser.ID, &resUser.IIN, &resUser.Username); err != nil {
+		return user.User{}, nil
+	}
+
+	return resUser, nil
 }

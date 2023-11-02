@@ -20,6 +20,7 @@ type Repository interface {
 	Create(ctx context.Context, dto *User) (*User, error)
 	CheckIfUserExistsByIIN(ctx context.Context, iin string) (bool, error)
 	GetUsersSignature(ctx context.Context, userId int) (string, error)
+	GetUser(ctx context.Context, userId int) (User, error)
 }
 
 // Service is a user service interface.
@@ -126,4 +127,8 @@ func getName(input string) *string {
 		fmt.Println("CN and/or GIVENNAME not found in the input string.")
 	}
 	return nil
+}
+
+func (s Service) GetUser(ctx context.Context, userId int) (User, error) {
+	return s.userRepository.GetUser(ctx, userId)
 }
