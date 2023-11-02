@@ -54,8 +54,7 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	ctx := context.Background()
 
 	signature := auth.GetNonceSignature(requirements.QrSigner)
-	fmt.Println("LEN OF sign", len(*signature))
-	fmt.Println("SIGNATURE111: ", signature)
+
 	req := model.AuthRequest{
 		Nonce:     requirements.Nonce,
 		Signature: signature,
@@ -68,7 +67,7 @@ func (s Service) Login(requirements model.LoginRequirements) (*User, error) {
 	}
 	fmt.Println(response)
 	iin := (response.UserID)[3:]
-	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager, Signature: signature}
+	user := &User{Username: getName(response.Subject), IIN: &iin, Email: &response.Email, BIN: &response.BusinessID, Is_manager: requirements.Is_manager}
 	id, exist, err := s.userRepository.CheckIfUserExistsByIIN(ctx, *user.IIN)
 	if err != nil {
 		return nil, err

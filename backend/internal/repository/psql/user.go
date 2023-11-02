@@ -73,13 +73,13 @@ func (ur UserRepository) Create(ctx context.Context, dto *user.User) (*user.User
 
 	// Prepare the SQL statement
 	sqlStatement := `
-		INSERT INTO users (iin, email, bin, name, is_manager, signature) 
+		INSERT INTO users (iin, email, bin, name, is_manager) 
 		VALUES ($1, $2, $3, $4, $5, $6) RETURNING id;
 		`
 	logger.FromContext(ctx).Debug("create user query", zap.String("sql", sqlStatement), zap.Any("args", dto))
 	var id int
 	// Execute the SQL statement
-	err := ur.db.Pool.QueryRow(ctx, sqlStatement, dto.IIN, dto.Email, dto.BIN, dto.Username, false, dto.Signature).Scan(&id)
+	err := ur.db.Pool.QueryRow(ctx, sqlStatement, dto.IIN, dto.Email, dto.BIN, dto.Username, false).Scan(&id)
 	if err != nil {
 		ur.logger.Error(errs.ErrInsertingUser.Error(), zap.Error(err))
 		return nil, fmt.Errorf("%w%w", errs.ErrInsertUser, err)
