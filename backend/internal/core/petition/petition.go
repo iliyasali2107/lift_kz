@@ -34,6 +34,10 @@ type UserRepository interface {
 	GetUsersSignature(ctx context.Context, userId int) (string, error)
 }
 
+type SurveyRepository interface {
+	GetSurveyById(ctx context.Context, surveyId int) (models.Survey, error)
+}
+
 // Service is a user service interface.
 type Service struct {
 	petitionRepository Repository

@@ -10,6 +10,7 @@ import (
 	// "mado/internal"
 	"mado/internal/auth"
 	"mado/internal/auth/model"
+	"mado/models"
 
 	// "mado/internal/controller/http/httperr"
 	"mado/internal/core/user"
@@ -23,7 +24,7 @@ type ECP struct {
 type UserService interface {
 	// Create(ctx context.Context, dto user.CreateDTO) (user.User, error)
 	Login(model.LoginRequirements) (*user.User, error)
-	GetUser(ctx context.Context, userId int) (user.User, error)
+	GetUser(ctx context.Context, userId int) (models.User, error)
 	// GetAllRows()()
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
+	"mado/helpers"
 	"mado/internal/core/petition"
 	"mado/pkg/errs"
 )
@@ -27,17 +28,20 @@ type petitionDeps struct {
 	router          *gin.RouterGroup
 	petitionService PetitionService
 	userService     UserService
+	surveyService   SurveyService
 }
 
 type petitionHandler struct {
 	petitionService PetitionService
 	userService     UserService
+	surveyService   SurveyService
 }
 
 func newPetitionHandler(deps petitionDeps) {
 	handler := petitionHandler{
 		petitionService: deps.petitionService,
 		userService:     deps.userService,
+		surveyService:   deps.surveyService,
 	}
 
 	usersGroup := deps.router.Group("/petition")
@@ -68,11 +72,11 @@ func (h petitionHandler) GetPetitionPDF(c *gin.Context) {
 }
 
 type GenerateRequest struct {
+	SurveyId int `json:"survey_id"`
 	UserId   int `json:"user_id"`
-	SurveyId int `josn:"survey_id"`
 }
 
-const location = "mock Location"
+const mockLocation = "mock Location"
 
 func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 	var req GenerateRequest
@@ -83,14 +87,27 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 		return
 	}
 
-	// user, err :=
-	_, err := h.userService.GetUser(c, req.UserId)
+	user, err := h.userService.GetUser(c, req.UserId)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	// survey, err := h.
+	survey, err := h.surveyService.GetSurveyByUserIdAndSurveyId(c, req.SurveyId, req.UserId)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	fmt.Println("user: ", *user.IIN, *user.Email)
+	fmt.Println("survey: ", survey)
+
+	requestData.CreationDate = helpers.CurrentDateModel()
+	requestData.Location = mockLocation
+	requestData.ResponsiblePerson = ""
+	requestData.OwnerName = *user.Username
 
 	currentDir, _ := os.Getwd()
 
@@ -99,6 +116,7 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 	outPath := currentDir + "/files/output_pdf/" + outFileName
 	temp, err := template.ParseFiles(htmlPath)
 	if err != nil {
+		fmt.Println(3)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -111,7 +129,7 @@ func (h petitionHandler) GeneratePetitionPDFHandler(c *gin.Context) {
 
 	finalFilePath, err := h.petitionService.GenerateFinalPdf(outPath)
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 

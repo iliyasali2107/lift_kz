@@ -13,6 +13,7 @@ import (
 	// "mado/internal"
 	"mado/internal/auth"
 	"mado/internal/auth/model"
+	"mado/models"
 )
 
 // Repository is a user repository.
@@ -20,7 +21,7 @@ type Repository interface {
 	Create(ctx context.Context, dto *User) (*User, error)
 	CheckIfUserExistsByIIN(ctx context.Context, iin string) (bool, error)
 	GetUsersSignature(ctx context.Context, userId int) (string, error)
-	GetUser(ctx context.Context, userId int) (User, error)
+	GetUser(ctx context.Context, userId int) (models.User, error)
 }
 
 // Service is a user service interface.
@@ -129,6 +130,6 @@ func getName(input string) *string {
 	return nil
 }
 
-func (s Service) GetUser(ctx context.Context, userId int) (User, error) {
+func (s Service) GetUser(ctx context.Context, userId int) (models.User, error) {
 	return s.userRepository.GetUser(ctx, userId)
 }
